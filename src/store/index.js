@@ -156,7 +156,7 @@ const actions = {
         // call backend
         try {
             console.log(getters.axiosConfig);
-            response = await axios.get( '/settings', getters.requestConfig);
+            response = await axios.get( '/', getters.requestConfig);
             console.log(response);
         } catch (error) {
             console.error(error);
