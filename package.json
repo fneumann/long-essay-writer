@@ -18,8 +18,6 @@
     "preview": "vite preview --port 5050"
   },
   "dependencies": {
-    "axios": "^0.25.0",
-    "localforage": "^1.10.0"
   },
   "devDependencies": {
     "@mdi/font": "5.9.55",
@@ -39,6 +37,8 @@
     "vue-cli-plugin-vuetify": "~2.4.5",
     "vuetify": "^3.0.0-alpha.0",
     "vuetify-loader": "^2.0.0-alpha.0",
-    "vuex": "^4.0.2"
+    "vuex": "^4.0.2",
+    "axios": "^0.25.0",
+    "localforage": "^1.10.0"
   }
 }
