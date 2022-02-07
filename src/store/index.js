@@ -1,11 +1,13 @@
-import {createStore} from "vuex";
+import createStore from "vuex";
+import axios from 'axios'
 import Cookies from 'js-cookie';
+//import task from './task';
 
 /**
  * Root Store
  */
 const state = {
-        initialized: '',
+        initialized: false,
         backendUrl: '',
         returnUrl: '',
         userKey: '',
@@ -19,7 +21,35 @@ const getters = {
     returnUrl: state => state.returnUrl,
     userKey: state => state.userKey,
     environmentKey: state => state.environmentKey,
-    authToken: state => state.authToken
+    authToken: state => state.authToken,
+
+    // config for backend calls
+    requestConfig(state) {
+
+        let baseURL = state.backendUrl;
+        let params = new URLSearchParams();
+
+        // cut query string and set it as params
+        // a REST path is added as url to the baseURL by axias calls
+        let position = baseURL.search(/\?+/);
+        if (position != -1) {
+            params = new URLSearchParams(baseURL.substr(position))
+            baseURL = baseURL.substr(0, position);
+        }
+
+        return {
+            baseURL: baseURL,
+            params: params,
+            headers: {
+                'LongEssayUser': state.userKey,
+                'LongEssayEnvironment': state.environmentKey,
+                'LongEssayToken': state.authToken
+            },
+            timeout: 30000,             // milliseconds
+            responseType: 'json',       // default
+            responseEncoding: 'utf8',   // default
+        }
+    }
 }
 
 const mutations = {
@@ -45,6 +75,10 @@ const mutations = {
     setAuthToken(state, token) {
         state.authToken = token;
         localStorage.setItem('authToken', token);
+    },
+    refreshToken(state, response) {
+        state.authToken = response.headers['LongEssayToken'];
+        localStorage.setItem('authToken', state.authToken);
     }
 }
 
@@ -54,8 +88,6 @@ const actions = {
      * Init the state
      * Take the state from the cookies or local store
      * Trigger a reload of all data if cookie valies differ from local store
-     *
-     * @param commit
      */
     init ({commit}) {
 
@@ -69,7 +101,7 @@ const actions = {
         let authToken = localStorage.getItem('authToken');
 
 
-        // check if cookie falues difer and force a reload
+        // check if cookie values differ and force a reload
         if (!!Cookies.get('LongEssayBackend') && Cookies.get('LongEssayBackend') !== backendUrl) {
             backendUrl = Cookies.get('LongEssayBackend');
             toReload = true;
@@ -91,17 +123,19 @@ const actions = {
             toReload = true;
         }
 
-        // save the current calues
+        // save the current values
         if (!!backendUrl && !!returnUrl && !!userKey && !!environmentKey && !!authToken) {
             commit('setBackendUrl', backendUrl);
             commit('setReturnUrl', returnUrl);
             commit('setUserKey', userKey);
             commit('setEnvironmentKey', environmentKey);
             commit('setAuthToken', authToken);
-            commit('setInitialized', true);
 
             if (toReload) {
                 // todo: dispatch loading of all other values
+            }
+            else {
+                commit('setInitialized', true);
             }
         }
 
@@ -111,11 +145,33 @@ const actions = {
         Cookies.remove('LongEssayUser');
         Cookies.remove('LongEssayEnvironment');
         Cookies.remove('LongEssayToken');
+    },
+
+    /**
+     * Load all data from the backend
+     */
+    async loadData({commit, getters}) {
+
+        let response = {};
+
+        // call backend
+        try {
+            response = await axios.get( '/settings', getters.axiosConfig);
+            console.log(response);
+        } catch (error) {
+            console.error(error);
+            return;
+        }
+
+        //await dispatch('task/loadFromData', response.data.task);
+
+        commit('refreshToken', response);
+        commit('setInitialized', true);
     }
 }
 
 const modules = {
-
+//    task: task
 }
 
 export default createStore({
