@@ -38,7 +38,7 @@
               <h2 class="text-h6">Aufgabenstellung</h2>
               {{instructions}}
 
-              <v-card hidden>
+              <v-card>
                 <v-list-item>initialized: {{initialized}}</v-list-item>
                 <v-list-item>backendUrl: {{backendUrl}}</v-list-item>
                 <v-list-item >returnUrl: {{returnUrl}}</v-list-item>
@@ -88,6 +88,9 @@ export default {
       'environmentKey',
       'authToken'
     ]),
+    ...mapState('task', [
+        'instructions'
+    ])
   }
 }
 </script>

@@ -1,7 +1,7 @@
-import createStore from "vuex";
+import {createStore} from "vuex";
 import axios from 'axios'
 import Cookies from 'js-cookie';
-//import task from './task';
+import task from './task';
 
 /**
  * Root Store
@@ -89,7 +89,7 @@ const actions = {
      * Take the state from the cookies or local store
      * Trigger a reload of all data if cookie valies differ from local store
      */
-    init ({commit}) {
+    async init ({commit, dispatch}) {
 
         let toReload = false;
 
@@ -123,6 +123,13 @@ const actions = {
             toReload = true;
         }
 
+        // remove the cookies (no longer needed)
+        Cookies.remove('LongEssayBackend');
+        Cookies.remove('LongEssayReturn');
+        Cookies.remove('LongEssayUser');
+        Cookies.remove('LongEssayEnvironment');
+        Cookies.remove('LongEssayToken');
+
         // save the current values
         if (!!backendUrl && !!returnUrl && !!userKey && !!environmentKey && !!authToken) {
             commit('setBackendUrl', backendUrl);
@@ -132,38 +139,31 @@ const actions = {
             commit('setAuthToken', authToken);
 
             if (toReload) {
-                // todo: dispatch loading of all other values
+                await dispatch('loadData');
             }
-            else {
-                commit('setInitialized', true);
-            }
-        }
 
-        // remove the cookies (no longer needed)
-        Cookies.remove('LongEssayBackend');
-        Cookies.remove('LongEssayReturn');
-        Cookies.remove('LongEssayUser');
-        Cookies.remove('LongEssayEnvironment');
-        Cookies.remove('LongEssayToken');
+            commit('setInitialized', true);
+        }
     },
 
     /**
      * Load all data from the backend
      */
-    async loadData({commit, getters}) {
+    async loadData({commit, getters, dispatch}) {
 
         let response = {};
 
         // call backend
         try {
-            response = await axios.get( '/settings', getters.axiosConfig);
+            console.log(getters.axiosConfig);
+            response = await axios.get( '/settings', getters.requestConfig);
             console.log(response);
         } catch (error) {
             console.error(error);
             return;
         }
 
-        //await dispatch('task/loadFromData', response.data.task);
+        await dispatch('task/loadFromData', response.data.task);
 
         commit('refreshToken', response);
         commit('setInitialized', true);
@@ -171,7 +171,7 @@ const actions = {
 }
 
 const modules = {
-//    task: task
+    task: task
 }
 
 export default createStore({
