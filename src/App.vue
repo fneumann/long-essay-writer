@@ -8,7 +8,7 @@
 
         <v-btn>
           <v-icon left icon="mdi-bell-outline"></v-icon>
-          <span>2 Mitteilungen</span>
+          <span>0 Mitteilungen</span>
         </v-btn>
 
         <v-btn>
@@ -16,7 +16,7 @@
           <span>Restzeit 02:13h</span>
         </v-btn>
 
-        <v-btn>
+        <v-btn :href="returnUrl">
           <v-icon left icon="mdi-logout-variant"></v-icon>
           <span>Beenden ...</span>
         </v-btn>
@@ -36,7 +36,7 @@
           <v-row dense>
             <v-col>
               <h2 class="text-h6">Aufgabenstellung</h2>
-              {{instructions}}
+              <div v-html="instructions"></div>
 
               <v-card>
                 <v-list-item>initialized: {{initialized}}</v-list-item>

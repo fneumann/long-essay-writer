@@ -77,7 +77,7 @@ const mutations = {
         localStorage.setItem('authToken', token);
     },
     refreshToken(state, response) {
-        state.authToken = response.headers['LongEssayToken'];
+        state.authToken = response.headers['longessaytoken'];
         localStorage.setItem('authToken', state.authToken);
     }
 }
@@ -124,11 +124,11 @@ const actions = {
         }
 
         // remove the cookies (no longer needed)
-        Cookies.remove('LongEssayBackend');
-        Cookies.remove('LongEssayReturn');
-        Cookies.remove('LongEssayUser');
-        Cookies.remove('LongEssayEnvironment');
-        Cookies.remove('LongEssayToken');
+        // Cookies.remove('LongEssayBackend');
+        // Cookies.remove('LongEssayReturn');
+        // Cookies.remove('LongEssayUser');
+        // Cookies.remove('LongEssayEnvironment');
+        // Cookies.remove('LongEssayToken');
 
         // save the current values
         if (!!backendUrl && !!returnUrl && !!userKey && !!environmentKey && !!authToken) {
@@ -139,7 +139,10 @@ const actions = {
             commit('setAuthToken', authToken);
 
             if (toReload) {
-                await dispatch('loadData');
+                await dispatch('loadDataFromBackend');
+            }
+            else {
+                await dispatch('loadDataFromStorage');
             }
 
             commit('setInitialized', true);
@@ -149,25 +152,30 @@ const actions = {
     /**
      * Load all data from the backend
      */
-    async loadData({commit, getters, dispatch}) {
+    async loadDataFromBackend({commit, getters, dispatch}) {
 
         let response = {};
-
-        // call backend
         try {
-            console.log(getters.axiosConfig);
-            response = await axios.get( '/', getters.requestConfig);
-            console.log(response);
-        } catch (error) {
+            response = await axios.get( '/data', getters.requestConfig);
+            commit('refreshToken', response);
+        }
+        catch (error) {
             console.error(error);
             return;
         }
 
         await dispatch('task/loadFromData', response.data.task);
+    },
 
-        commit('refreshToken', response);
-        commit('setInitialized', true);
+    /**
+     * Load all data from the storage
+     */
+    async loadDataFromStorage({dispatch}) {
+
+        await dispatch('task/loadFromStorage');
     }
+
+
 }
 
 const modules = {

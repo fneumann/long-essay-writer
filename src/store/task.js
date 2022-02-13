@@ -9,42 +9,39 @@ const storage = localForage.createInstance({
  * Task Store
  */
 const state = {
-    instructions: 'not yet loaded'
+    instructions: null,
+    writing_end: null
 }
 
 const getters = {
     instructions: state => state.instructions,
+    writing_end:  state => state.writing_end
 }
 
 const mutations = {
-    setInstructions(state, instructions) {
-        state.instructions = instructions;
+    setData(state, data) {
+        state.instructions = data.instructions;
+        state.writing_end = data.writing_end;
     }
 }
 
 const actions = {
     async loadFromStorage({commit}) {
         try {
-            const value = await storage.getItem('instructions');
-            console.log('got instructions from storage');
-            commit('setInstructions', value);
+            const data = await storage.getItem('task');
+            commit('setData', data);
         } catch (err) {
             console.log(err);
         }
-
-        // other properties
     },
 
     async loadFromData({commit}, data) {
         try {
-            await storage.setItem('instructions', data.instructions);
-            console.log('got instructions from storage');
-            commit('setInstructions', data.instructions);
+            await storage.setItem('task', data);
+            commit('setData', data);
         } catch (err) {
             console.log(err);
         }
-
-        // other properties
     }
 }
 
