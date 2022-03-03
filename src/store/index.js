@@ -124,6 +124,7 @@ const actions = {
         }
 
         // remove the cookies (no longer needed)
+        // commented - brings currently a warning
         // Cookies.remove('LongEssayBackend');
         // Cookies.remove('LongEssayReturn');
         // Cookies.remove('LongEssayUser');

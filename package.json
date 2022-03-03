@@ -17,8 +17,6 @@
     "dev": "vite",
     "preview": "vite preview --port 5050"
   },
-  "dependencies": {
-  },
   "devDependencies": {
     "@mdi/font": "5.9.55",
     "@tinymce/tinymce-vue": "^4.0.4",
@@ -26,9 +24,11 @@
     "@vue/cli-plugin-babel": "5.0.0-beta.7",
     "@vue/cli-service": "5.0.0-beta.7",
     "@vuetify/vite-plugin": "^1.0.0-alpha.3",
+    "axios": "^0.25.0",
     "eslint": "^8.5.0",
     "eslint-plugin-vue": "^8.2.0",
     "js-cookie": "^3.0.1",
+    "localforage": "^1.10.0",
     "sass": "^1.38.0",
     "sass-loader": "^10.0.0",
     "tinymce": "^5.9.2",
@@ -37,8 +37,6 @@
     "vue-cli-plugin-vuetify": "~2.4.5",
     "vuetify": "^3.0.0-alpha.0",
     "vuetify-loader": "^2.0.0-alpha.0",
-    "vuex": "^4.0.2",
-    "axios": "^0.25.0",
-    "localforage": "^1.10.0"
+    "vuex": "^4.0.2"
   }
 }
