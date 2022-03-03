@@ -10,7 +10,9 @@ lerna-debug.log*
 # General
 node_modules
 .DS_Store
-dist
+# edu: don't ignore dist.
+# dist
+# edu.
 dist-ssr
 coverage
 *.local
