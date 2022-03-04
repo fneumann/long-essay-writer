@@ -23,7 +23,9 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState } from 'pinia'
+import {useApiStore} from '@/store/api';
+
 
 export default {
   name: "AppBar",
@@ -36,7 +38,7 @@ export default {
   }),
 
   computed: {
-    ...mapState([
+    ...mapState(useApiStore, [
       'returnUrl'
     ])
   }

@@ -12,14 +12,18 @@
 /**
  * Main Application
  */
-import { mapState } from 'vuex';
 import AppBar from "@/components/AppBar.vue";
 import NavBar from "@/components/NavBar.vue";
 import StateBar from "@/components/StateBar.vue";
 import MainContent from "@/components/MainContent.vue";
-
+import {useApiStore} from '@/store/api';
 
 export default {
+  setup() {
+    const apiStore = useApiStore();
+    apiStore.init();
+  },
+
   name: 'App',
 
   components: {
@@ -34,9 +38,6 @@ export default {
   }),
 
   computed: {
-    ...mapState([
-      'initialized',
-    ])
   }
 }
 </script>

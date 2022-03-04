@@ -1,3 +1,4 @@
+import { defineStore } from 'pinia';
 import localForage from "localforage";
 
 const storage = localForage.createInstance({
@@ -8,51 +9,36 @@ const storage = localForage.createInstance({
 /**
  * Task Store
  */
-const state = {
-    instructions: null,
-    writing_end: null
-}
-
-const getters = {
-    instructions: state => state.instructions,
-    writing_end:  state => state.writing_end
-}
-
-const mutations = {
-    setData(state, data) {
-        state.instructions = data.instructions;
-        state.writing_end = data.writing_end;
-    }
-}
-
-const actions = {
-    async loadFromStorage({commit}) {
-        try {
-            const data = await storage.getItem('task');
-            commit('setData', data);
-        } catch (err) {
-            console.log(err);
+export const useTaskStore = defineStore('task',{
+    state: () => {
+        return {
+            instructions: null,
+            writing_end: null
         }
     },
 
-    async loadFromData({commit}, data) {
-        try {
-            await storage.setItem('task', data);
-            commit('setData', data);
-        } catch (err) {
-            console.log(err);
+    actions: {
+        setData(data) {
+            this.instructions = data.instructions + 'xxx';
+            this.writing_end = data.writing_end;
+        },
+
+        async loadFromStorage() {
+            try {
+                const data = await storage.getItem('task');
+                this.setData(data);
+            } catch (err) {
+                console.log(err);
+            }
+        },
+
+        async loadFromData(data) {
+            try {
+                await storage.setItem('task', data);
+                this.setData(data);
+            } catch (err) {
+                console.log(err);
+            }
         }
     }
-}
-
-const modules = {
-}
-
-export default {
-    namespaced: true,
-    state,
-    getters,
-    mutations,
-    actions,
-    modules
-}
+});
