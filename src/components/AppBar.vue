@@ -1,3 +1,9 @@
+<script setup>
+import {useApiStore} from '@/store/api';
+const apiStore = useApiStore();
+
+</script>
+
 <template>
   <v-app-bar elevation="1" color="white" density="compact" >
     <v-app-bar-title>Fred Neumann, Klausur Vertragsrecht I</v-app-bar-title>
@@ -14,37 +20,10 @@
       <span>Restzeit 02:13h</span>
     </v-btn>
 
-    <v-btn :href="returnUrl">
+    <v-btn :href="apiStore.returnUrl">
       <v-icon left icon="mdi-logout-variant"></v-icon>
       <span>Beenden ...</span>
     </v-btn>
   </v-app-bar>
 
 </template>
-
-<script>
-import { mapState } from 'pinia'
-import {useApiStore} from '@/store/api';
-
-
-export default {
-  name: "AppBar",
-
-  components: {
-  },
-
-  data: () => ({
-    //
-  }),
-
-  computed: {
-    ...mapState(useApiStore, [
-      'returnUrl'
-    ])
-  }
-}
-</script>
-
-<style scoped>
-
-</style>

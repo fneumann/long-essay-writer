@@ -19,7 +19,7 @@ export const useTaskStore = defineStore('task',{
 
     actions: {
         setData(data) {
-            this.instructions = data.instructions + 'xxx';
+            this.instructions = data.instructions;
             this.writing_end = data.writing_end;
         },
 

@@ -1,13 +1,4 @@
-<template>
-    <v-app>
-      <app-bar></app-bar>
-      <nav-bar></nav-bar>
-      <main-content></main-content>
-      <state-bar></state-bar>
-    </v-app>
-</template>
-
-<script>
+<script setup>
 
 /**
  * Main Application
@@ -18,26 +9,16 @@ import StateBar from "@/components/StateBar.vue";
 import MainContent from "@/components/MainContent.vue";
 import {useApiStore} from '@/store/api';
 
-export default {
-  setup() {
-    const apiStore = useApiStore();
-    apiStore.init();
-  },
+const apiStore = useApiStore();
+apiStore.init();
 
-  name: 'App',
-
-  components: {
-    'app-bar': AppBar,
-    'nav-bar': NavBar,
-    'main-content': MainContent,
-    'state-bar': StateBar,
-  },
-
-  data: () => ({
-    //
-  }),
-
-  computed: {
-  }
-}
 </script>
+
+<template>
+    <v-app>
+      <app-bar></app-bar>
+      <nav-bar></nav-bar>
+      <main-content></main-content>
+      <state-bar></state-bar>
+    </v-app>
+</template>

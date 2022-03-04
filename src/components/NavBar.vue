@@ -1,3 +1,6 @@
+<script setup>
+</script>
+
 <template>
   <v-navigation-drawer elevation="2" color="grey-lighten-2" rail expand-on-hover>
 
@@ -9,13 +12,3 @@
     </v-list>
   </v-navigation-drawer>
 </template>
-
-<script>
-export default {
-  name: "NavBar"
-}
-</script>
-
-<style scoped>
-
-</style>
