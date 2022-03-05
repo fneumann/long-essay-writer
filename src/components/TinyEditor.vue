@@ -1,22 +1,22 @@
 <script setup>
-/*
-* Import TinyMCE
-*/
-import 'tinymce';
-// Default icons are required for TinyMCE 5.3 or above
-import 'tinymce/icons/default';
-// A theme is also required
-import 'tinymce/themes/silver';
+  /*
+  * Import TinyMCE
+  */
+  import 'tinymce';
+  // Default icons are required for TinyMCE 5.3 or above
+  import 'tinymce/icons/default';
+  // A theme is also required
+  import 'tinymce/themes/silver';
 
-// Import the skin
-import 'tinymce/skins/ui/oxide/skin.css';
+  // Import the skin
+  import 'tinymce/skins/ui/oxide/skin.css';
 
-/* Import plugins */
-import 'tinymce/plugins/lists';
-import 'tinymce/plugins/charmap';
+  /* Import plugins */
+  import 'tinymce/plugins/lists';
+  import 'tinymce/plugins/charmap';
 
-/* Import tiny vue integration */
-import Editor from '@tinymce/tinymce-vue'
+  /* Import tiny vue integration */
+  import Editor from '@tinymce/tinymce-vue'
 </script>
 
 <template>
