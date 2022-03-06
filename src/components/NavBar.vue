@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <v-navigation-drawer elevation="2" color="grey-lighten-2" rail expand-on-hover>
+  <v-navigation-drawer elevation="2" color="grey-lighten-2" permanent rail expand-on-hover>
 
     <v-list>
       <v-list-item prepend-icon="mdi-text-box-outline" title="Aufgabenstellung"></v-list-item>
