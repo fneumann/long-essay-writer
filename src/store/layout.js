@@ -6,13 +6,35 @@ import { defineStore } from 'pinia';
 export const useLayoutStore = defineStore('layout',{
     state: () => {
         return {
-            expanded: 'left',               // left|right|none
+            expandedColumn: 'none',         // left|right|none
             leftContent: 'instructions',    // instructions
             rightContent: 'essay'           // essay
         }
     },
 
+    getters: {
+        isLeftExpanded: (state) => state.expandedColumn == 'left',
+        isRightExpanded: (state) => state.expandedColumn == 'right',
+        isLeftVisible: (state) => state.expandedColumn != 'right',
+        isRightVisible: (state) => state.expandedColumn != 'left'
+    },
+
     actions: {
+
+        /**
+         * @param bool expanded
+         */
+        setLeftExpanded(expanded) {
+            this.expandedColumn = expanded ? 'left' : 'none';
+        },
+
+        /**
+         * @param bool expanded
+         */
+        setRightExpanded(expanded) {
+            this.expandedColumn = expanded ? 'right' : 'none';
+        }
+
 
     }
 });
