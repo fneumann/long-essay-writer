@@ -12,6 +12,8 @@ const storage = localForage.createInstance({
 export const useTaskStore = defineStore('task',{
     state: () => {
         return {
+            title: null,
+            writer_name: null,
             instructions: null,
             writing_end: null
         }
@@ -19,7 +21,9 @@ export const useTaskStore = defineStore('task',{
 
     actions: {
         setData(data) {
+            this.title = data.title;
             this.instructions = data.instructions;
+            this.writer_name = data.writer_name;
             this.writing_end = data.writing_end;
         },
 

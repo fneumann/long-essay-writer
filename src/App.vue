@@ -22,3 +22,10 @@ apiStore.init();
       <main-content/>
     </v-app>
 </template>
+
+<style>
+
+html {
+  overflow-y: hidden !important;
+}
+</style>

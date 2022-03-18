@@ -16,7 +16,8 @@ export const useLayoutStore = defineStore('layout',{
         isLeftExpanded: (state) => state.expandedColumn == 'left',
         isRightExpanded: (state) => state.expandedColumn == 'right',
         isLeftVisible: (state) => state.expandedColumn != 'right',
-        isRightVisible: (state) => state.expandedColumn != 'left'
+        isRightVisible: (state) => state.expandedColumn != 'left',
+        instructionsVisible: (state) => (state.expandedColumn != 'right' && state.leftContent == 'instructions')
     },
 
     actions: {

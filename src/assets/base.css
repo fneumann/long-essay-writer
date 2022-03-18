@@ -72,9 +72,3 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* edu: avoid scrollbar on the right */
-html {
-  overflow: hidden;
-}
-/* edu. */
