@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import axios from 'axios'
 import Cookies from 'js-cookie';
 import {useTaskStore} from "./task";
+import {useLayoutStore} from "./layout";
 
 /**
  * API Store
@@ -118,13 +119,13 @@ export const useApiStore = defineStore('api', {
                 toReload = true;
             }
 
-            // remove the cookies (no longer needed)
-            // commented - brings currently a warning
-            // Cookies.remove('LongEssayBackend');
-            // Cookies.remove('LongEssayReturn');
-            // Cookies.remove('LongEssayUser');
-            // Cookies.remove('LongEssayEnvironment');
-            // Cookies.remove('LongEssayToken');
+            // remove the cookies
+            // needed to distinct the call from the backend from a later reload
+            Cookies.remove('LongEssayBackend');
+            Cookies.remove('LongEssayReturn');
+            Cookies.remove('LongEssayUser');
+            Cookies.remove('LongEssayEnvironment');
+            Cookies.remove('LongEssayToken');
 
             // save the current values
             if (!!backendUrl && !!returnUrl && !!userKey && !!environmentKey && !!authToken) {
@@ -141,6 +142,7 @@ export const useApiStore = defineStore('api', {
                     await this.loadDataFromStorage();
                 }
 
+
                 this.setInitialized(true);
             }
         },
@@ -149,7 +151,7 @@ export const useApiStore = defineStore('api', {
          * Load all data from the backend
          */
         async loadDataFromBackend() {
-
+            console.log("loadDataFromBackend...");
             let response = {};
             try {
                 response = await axios.get( '/data', this.requestConfig);
@@ -161,16 +163,20 @@ export const useApiStore = defineStore('api', {
             }
 
             const taskStore = useTaskStore();
-            await taskStore.setData(response.data.task);
+            await taskStore.loadFromData(response.data.task);
         },
 
         /**
          * Load all data from the storage
          */
         async loadDataFromStorage() {
+            console.log("loadDataFromStorage...");
 
             const taskStore = useTaskStore();
             await taskStore.loadFromStorage();
+
+            const layoutStore = useLayoutStore();
+            await layoutStore.loadFromStorage();
         }
     }
 })
