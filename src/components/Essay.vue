@@ -5,3 +5,9 @@ import TinyEditor from "@/components/TinyEditor.vue";
 <template>
   <tiny-editor></tiny-editor>
 </template>
+
+<style>
+  .tox-statusbar {
+    display: none!important;
+  }
+</style>

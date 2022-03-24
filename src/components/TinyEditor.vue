@@ -23,7 +23,7 @@
   <editor
       api-key="no-api-key"
       :init="{
-         height: 500,
+         height: '100%',
          menubar: false,
          plugins:
            'lists charmap'

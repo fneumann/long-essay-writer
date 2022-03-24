@@ -1,8 +1,11 @@
 <script setup>
   import Instructions from "@/components/Instructions.vue";
+  import Resources from "@/components/Resources.vue";
   import Essay from "@/components/Essay.vue";
   import {useLayoutStore} from "../store/layout";
+  import {useResourcesStore} from "../store/resources";
   const layoutStore = useLayoutStore();
+  const resourcesStore = useResourcesStore();
 </script>
 
 <template>
@@ -10,10 +13,12 @@
     <div class="container">
       <div  class="column" :class="{ colExpanded: layoutStore.isLeftExpanded, colNormal: !layoutStore.isLeftExpanded}" v-show="layoutStore.isLeftVisible">
         <div class="col-header">
-          <h2 class="text-h6">Aufgabenstellung</h2>
+          <h2 class="text-h6" v-show="layoutStore.isInstructionsVisible">Aufgabenstellung</h2>
+          <h2 class="text-h6" v-show="layoutStore.isResourcesVisible">{{ resourcesStore.activeTitle }}</h2>
         </div>
         <div class="col-content">
-          <instructions />
+          <instructions v-show="layoutStore.isInstructionsVisible" />
+          <resources v-show="layoutStore.isResourcesVisible" />
         </div>
         <div class="col-footer text-right" :class="{ footerExpanded: layoutStore.isLeftExpanded, footerNormal: !layoutStore.isLeftExpanded}" >
           <v-btn class="ma-2" @click="layoutStore.setLeftExpanded(false)" v-show="layoutStore.isLeftExpanded">
@@ -70,9 +75,9 @@
 }
 
 .col-content {
-  height: calc(((100% - 50px)) - 50px);
+  height: calc(((100% - 50px)) - 70px);
   background-color: white;
-  overflow-y: scroll;
+  overflow: hidden;
   width: 100%;
   padding:10px;
 }
