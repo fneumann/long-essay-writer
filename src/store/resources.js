@@ -56,14 +56,19 @@ export const useResourcesStore = defineStore('resources',{
     },
 
     actions: {
-        setData(data) {
-            this.resources = data.resources;
-        },
-
         async loadFromStorage() {
             try {
-                const data = await storage.getItem('resources');
-                this.setData(data);
+                //this.resources = await storage.getItem('resources');
+                this.active_id =  await storage.getItem('active_id');
+            } catch (err) {
+                console.log(err);
+            }
+        },
+
+        async saveToStorage() {
+            try {
+                //await storage.setItem('resources', this.resources);
+                await storage.setItem('active_id', this.active_id);
             } catch (err) {
                 console.log(err);
             }
@@ -71,8 +76,9 @@ export const useResourcesStore = defineStore('resources',{
 
         async loadFromData(data) {
             try {
-                await storage.setItem('resources', data);
-                this.setData(data);
+                this.resources = data.resources;
+                this.active_id = data.active_id;
+                await this.saveToStorage();
             } catch (err) {
                 console.log(err);
             }
@@ -80,6 +86,7 @@ export const useResourcesStore = defineStore('resources',{
 
         selectResource(resource) {
             this.active_id = resource.id;
+            this.saveToStorage();
         }
     }
 });
