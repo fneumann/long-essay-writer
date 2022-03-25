@@ -23,10 +23,10 @@
         <div class="col-footer text-right" :class="{ footerExpanded: layoutStore.isLeftExpanded, footerNormal: !layoutStore.isLeftExpanded}" >
           <v-btn class="ma-2" @click="layoutStore.setLeftExpanded(false)" v-show="layoutStore.isLeftExpanded">
             <v-icon icon="mdi-chevron-left"></v-icon>
-            Reduce
+            <span>Mein Text</span>
           </v-btn>
           <v-btn class="ma-2" @click="layoutStore.setLeftExpanded(true)" v-show="!layoutStore.isLeftExpanded">
-            Expand
+            <span>Erweitern</span>
             <v-icon icon="mdi-chevron-right"></v-icon>
           </v-btn>
         </div>
@@ -41,10 +41,11 @@
         <div class="col-footer text-left" :class="{ footerExpanded: layoutStore.isRightExpanded, footerNormal: !layoutStore.isRightExpanded}">
           <v-btn class="ma-2" @click="layoutStore.setRightExpanded(true)" v-show="!layoutStore.isRightExpanded">
             <v-icon icon="mdi-chevron-left"></v-icon>
-            Expand
+            <span>Erweitern</span>
           </v-btn>
           <v-btn class="ma-2" @click="layoutStore.setRightExpanded(false)" v-show="layoutStore.isRightExpanded">
-            Reduce
+            <span v-show="layoutStore.isInstructionsSelected">Aufgabenstellung</span>
+            <span v-show="layoutStore.isResourcesSelected">{{ resourcesStore.activeTitle }}</span>
             <v-icon icon="mdi-chevron-right"></v-icon>
           </v-btn>
         </div>

@@ -3,6 +3,7 @@ import axios from 'axios'
 import Cookies from 'js-cookie';
 import {useTaskStore} from "./task";
 import {useLayoutStore} from "./layout";
+import {useResourcesStore} from "./resources";
 
 /**
  * API Store
@@ -177,6 +178,9 @@ export const useApiStore = defineStore('api', {
 
             const layoutStore = useLayoutStore();
             await layoutStore.loadFromStorage();
+
+            const resourcesStore = useResourcesStore();
+            await resourcesStore.loadFromStorage();
         }
     }
 })

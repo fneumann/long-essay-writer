@@ -21,10 +21,16 @@ export const useLayoutStore = defineStore('layout',{
     getters: {
         isLeftExpanded: (state) => state.expandedColumn == 'left',
         isRightExpanded: (state) => state.expandedColumn == 'right',
+
         isLeftVisible: (state) => state.expandedColumn != 'right',
         isRightVisible: (state) => state.expandedColumn != 'left',
+
+        isInstructionsSelected: (state) => state.leftContent == 'instructions',
+        isResourcesSelected: (state) => state.leftContent == 'resources',
+
         isInstructionsVisible: (state) => (state.expandedColumn != 'right' && state.leftContent == 'instructions'),
         isResourcesVisible: (state) => (state.expandedColumn != 'right' && state.leftContent == 'resources'),
+
         isEssayVisible: (state) => (state.expandedColumn != 'left' && state.rightContent == 'essay')
     },
 
@@ -73,37 +79,25 @@ export const useLayoutStore = defineStore('layout',{
             this.saveToStorage();
         },
 
-        /**
-         * @param bool expanded
-         */
         setLeftVisible() {
             if (!this.isLeftVisible) {
                 this.expandedColumn = 'left';
+                this.saveToStorage();
             }
-            this.saveToStorage();
         },
 
-        /**
-         * @param bool expanded
-         */
         setRightVisible() {
             if (!this.isRightVisible) {
                 this.expandedColumn = 'right';
+                this.saveToStorage();
             }
-            this.saveToStorage();
         },
 
-        /**
-         * @param bool expanded
-         */
         setLeftExpanded(expanded) {
             this.expandedColumn = expanded ? 'left' : 'none';
             this.saveToStorage();
         },
 
-        /**
-         * @param bool expanded
-         */
         setRightExpanded(expanded) {
             this.expandedColumn = expanded ? 'right' : 'none';
             this.saveToStorage();
