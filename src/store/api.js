@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 import {useTaskStore} from "./task";
 import {useLayoutStore} from "./layout";
 import {useResourcesStore} from "./resources";
+import {useEssayStore} from "./essay";
 
 /**
  * API Store
@@ -165,6 +166,9 @@ export const useApiStore = defineStore('api', {
 
             const taskStore = useTaskStore();
             await taskStore.loadFromData(response.data.task);
+
+            const essayStore = useEssayStore();
+            await essayStore.loadFromData({});
         },
 
         /**
@@ -181,6 +185,9 @@ export const useApiStore = defineStore('api', {
 
             const resourcesStore = useResourcesStore();
             await resourcesStore.loadFromStorage();
+
+            const essayStore = useEssayStore();
+            await essayStore.loadFromStorage();
         }
     }
 })

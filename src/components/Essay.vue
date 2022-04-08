@@ -20,29 +20,14 @@ const essayStore = useEssayStore();
 
 // Used for retrieving the editor instance using the tinymce.get('ID') method.
 const id = "essay";
-
-
-function update() {
-  essayStore.updateContent();
-}
-
-function undo() {
-}
-
-function redo() {
-}
-
-
 </script>
 
 <template>
   <editor
       :id="id"
-      v-model="essayStore.content"
-      @change="update()"
-      @keyup="update()"
-      @undo.prevent="undo()"
-      @redo.prevent="redo()"
+      v-model="essayStore.currentContent"
+      @change="essayStore.updateContent(true)"
+      @keyup="essayStore.updateContent(true)"
       api-key="no-api-key"
       :init="{
         height: '100%',
@@ -53,7 +38,7 @@ function redo() {
         toolbar:
            'undo redo | formatselect | bold italic | \
            bullist numlist outdent indent | removeformat | charmap',
-        custom_undo_redo_levels: 1
+        custom_undo_redo_levels: 10
        }"
   />
 </template>
