@@ -18,15 +18,12 @@ import Editor from '@tinymce/tinymce-vue'
 import {useEssayStore} from '@/store/essay';
 const essayStore = useEssayStore();
 
-import { ref } from 'vue';
-const content=ref('');
-
 // Used for retrieving the editor instance using the tinymce.get('ID') method.
 const id = "essay";
 
 
 function update() {
-  essayStore.updateContent(content);
+  essayStore.updateContent();
 }
 
 function undo() {
@@ -41,7 +38,7 @@ function redo() {
 <template>
   <editor
       :id="id"
-      v-model="content"
+      v-model="essayStore.content"
       @change="update()"
       @keyup="update()"
       @undo.prevent="undo()"
