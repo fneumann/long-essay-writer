@@ -168,7 +168,10 @@ export const useApiStore = defineStore('api', {
             await taskStore.loadFromData(response.data.task);
 
             const essayStore = useEssayStore();
-            await essayStore.loadFromData({});
+            await essayStore.loadFromData({
+                content: 'Hallo Welt',
+                history: []
+            });
         },
 
         /**

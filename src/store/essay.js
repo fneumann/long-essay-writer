@@ -9,9 +9,9 @@ const storage = localForage.createInstance({
 
 const dmp = new DiffMatchPatch();
 
-const checkInterval = 1000;     // time (ms) to wait for a new update check
+const checkInterval = 1000;     // time (ms) to wait for a new update check (e.g. 0.2s to 1s)
 const saveInterval = 5000;      // maximum time (ms) to wait for a new save if content is changed
-const saveDistance = 5;         // maximum levenshtein distance to wait for a new save
+const saveDistance = 5;         // maximum levenshtein distance to wait for a new save if content is changed
 const maxDistance = 1000;       // maximum cumulated levenshtein distance of patches before a new full save is done
 
 const typeFull = 'FULL';        // type of a save object with full text
@@ -28,7 +28,7 @@ const startState = {
     lastSave: 0,                // timestamp of the last save in the store
 }
 
-let lockUpdate = false;         // prevent updates during a processing
+let lockUpdate = 0;             // prevent updates during a processing
 
 /**
  * Essay store
@@ -63,7 +63,7 @@ export const useEssayStore = defineStore('essay',{
          * Called when the app is opened from the backend
          */
         async loadFromData(data) {
-            lockUpdate = true;
+            lockUpdate = 1;
 
             try {
                 this.$state = startState;  // todo check if referenced
@@ -103,7 +103,7 @@ export const useEssayStore = defineStore('essay',{
                 console.log(err);
             }
 
-            lockUpdate = false;
+            lockUpdate = 0;
             setInterval(this.updateContent, checkInterval);
         },
 
@@ -112,14 +112,14 @@ export const useEssayStore = defineStore('essay',{
          * Called when the page is reloaded 
          */
         async loadFromStorage() {
-            lockUpdate = true;
+            lockUpdate = 1;
 
             try {
                 this.$state = startState; // todo check if referenced
 
                 this.currentContent =  await storage.getItem('content') ?? '';
                 this.lastStoredIndex = await storage.getItem('lastStoredIndex') ?? -1;
-                this.historyContent =  this.currentContent
+                this.historyContent = this.currentContent
 
                 let index = 0;
                 while (index <= this.lastStoredIndex) {
@@ -143,7 +143,7 @@ export const useEssayStore = defineStore('essay',{
                 console.log(err);
             }
 
-            lockUpdate = false;
+            lockUpdate = 0;
             setInterval(this.updateContent, checkInterval);
         },
 
@@ -153,24 +153,30 @@ export const useEssayStore = defineStore('essay',{
          * Triggered from the editor component when the content is changed
          */
         async updateContent(fromEditor = false) {
-            // avoid parallel updates
-            if (lockUpdate) {
+
+            // avoid too many checks
+            const currentTime = Date.now();
+            if (currentTime - this.lastCheck < checkInterval) {
                 return;
             }
-            lockUpdate = true;
-            const currentContent = this.currentContent + '';       // ensure it is not changed because content is bound to tiny
-            const historyContent = this.historyContent + '';
-            const currentTime = Date.now();
+
+            // avoid parallel updates
+            // no need to wait because update is checked by interval
+            // use post-increment for test-and set
+            if (lockUpdate++) {
+                return;
+            }
+
 
             try {
+                const currentContent = this.currentContent + '';   // ensure it is not changed because content is bound to tiny
+                const historyContent = this.historyContent + '';
                 let saveObject = null;
 
                 //
-                // create the save object
+                // create the save object if content has changed
                 //
-
-                // content is changed and check time is over
-                if ((currentContent != historyContent) && currentTime - this.lastCheck >= checkInterval) {
+                if ((currentContent != historyContent)) {
 
                     // check for change and calculate the patch
                     let diffs = dmp.diff_main(historyContent, currentContent);
@@ -185,7 +191,7 @@ export const useEssayStore = defineStore('essay',{
                     if (this.history.length == 0                            // it is the first save
                         || difftext.length > currentContent.length          // or diff would be longer than full text
                         || this.sumOfDistances + distance > maxDistance     // or enough changes are saved as diffs
-                        || result[0] != currentContent                      // or patch would be wrong
+                        || result[0] != currentContent                      // or patch is wrong
                     ) {
                         saveObject = {
                             type: typeFull,
@@ -195,8 +201,8 @@ export const useEssayStore = defineStore('essay',{
                         }
                     }
                     // make a diff save if ...
-                    else if (distance >= saveDistance                       // enouch changes since lase save 
-                        || currentTime - this.lastSave > saveInterval           // enogh time since last save
+                    else if (distance >= saveDistance                       // enouch changed since lase save
+                        || currentTime - this.lastSave > saveInterval       // enogh time since last save
                     ) {
                         saveObject = {
                             type: typeDiff,
@@ -208,7 +214,7 @@ export const useEssayStore = defineStore('essay',{
                 }
 
                 //
-                // add the save object
+                // add the save object to the history
                 //
                 if (saveObject !== null) {
 
@@ -230,15 +236,21 @@ export const useEssayStore = defineStore('essay',{
                     this.lastStoredIndex = lastIndex;
                     this.lastSave = currentTime;
 
-                    console.log('Type:', saveObject.type, "|Distance: ", saveObject.distance, "| sumOfDistances: ", this.sumOfDistances, "| fromEditor: ", fromEditor, " Duration:", Date.now() - currentTime, 'ms');
+                    console.log(
+                        "Type:", saveObject.type,
+                        "| Distance (sum): ", saveObject.distance, "(", this.sumOfDistances, ")",
+                        "| Editor: ", fromEditor,
+                        "| Duration:", Date.now() - currentTime, 'ms');
                 }
+
+                // set this here
+                this.lastCheck = currentTime;
             }
             catch(error) {
                 console.error(error);
             }
 
-            this.lastCheck = currentTime;
-            lockUpdate = false;
+            lockUpdate = 0;
         }
     }
 });
