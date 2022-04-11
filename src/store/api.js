@@ -191,6 +191,27 @@ export const useApiStore = defineStore('api', {
 
             const essayStore = useEssayStore();
             await essayStore.loadFromStorage();
+        },
+
+        /**
+         * Save the writing steps to the backend
+         */
+        async saveWritingStepsToBackend(steps) {
+            console.log("saveWritingStepsToBackend...");
+
+            let response = {};
+            let data = {
+                steps: steps
+            }
+            try {
+                response = await axios.put( '/essay', data, this.requestConfig);
+                this.refreshToken(response);
+                return true;
+            }
+            catch (error) {
+                console.error(error);
+                return false;
+            }
         }
     }
 })

@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import localForage from "localforage";
 import DiffMatchPatch from 'diff-match-patch';
+import md5 from 'md5';
+import {useApiStore} from "./api";
+import {useResourcesStore} from "./resources";
 
 const storage = localForage.createInstance({
     storeName: "essay",
@@ -14,21 +17,22 @@ const saveInterval = 5000;      // maximum time (ms) to wait for a new save if c
 const saveDistance = 5;         // maximum levenshtein distance to wait for a new save if content is changed
 const maxDistance = 1000;       // maximum cumulated levenshtein distance of patches before a new full save is done
 
-const typeFull = 'FULL';        // type of a save object with full text
-const typeDiff = 'DIFF';        // type of a save object with patch text from diff
 
 const startState = {
     currentContent: '',         // directly mapped to the editor
     historyContent: '',         // full content of the last history entry
+    historyHash: '',            // hash of the last history entry
     history: [],                // list of save objects
     sumOfDistances: 0,          // sum of levenshtine distances sice the last full save
     lastFullIndex: -1,          // history index of the last full save
     lastStoredIndex: -1,        // history index of the last save in the store
+    lastSentIndex: -1,          // history index of the last sending to the backend
     lastCheck: 0,               // timestamp of the last check if an update needs a saving
     lastSave: 0,                // timestamp of the last save in the store
 }
 
 let lockUpdate = 0;             // prevent updates during a processing
+let lockSending = 0;            // prevent multiple sendings at the same time
 
 /**
  * Essay store
@@ -49,7 +53,7 @@ export const useEssayStore = defineStore('essay',{
         historyLength: (state) => state.history.length,
 
         formatTimestamp() {
-            return (timestamp) => (new Date(timestamp)).toISOString().slice(0, 23).replace('T', ' ');
+            return (timestamp) => (new Date(timestamp)).toISOString().slice(0, 19).replace('T', ' ');
         },
         formatIndex() {
             return (index) => index.toString().padStart(9, '0');
@@ -66,9 +70,10 @@ export const useEssayStore = defineStore('essay',{
             lockUpdate = 1;
 
             try {
-                this.$state = startState;  // todo check if referenced
+                this.$state = startState;
                 this.currentContent = data.content;
                 this.historyContent = data.content;
+                this.historyHash = md5(data.content);
 
                 await storage.clear();
                 await storage.setItem('content', this.currentContent);
@@ -77,13 +82,14 @@ export const useEssayStore = defineStore('essay',{
                 while (index < data.history.length) {
                     let entry = data.history[index];
                     let saveObject = {
-                        type: entry.type,
-                        time: entry.time,
-                        distance: entry.distance,
-                        content: entry.content
+                        is_delta: entry.is_delta,
+                        timestamp: entry.timestamp,
+                        content: entry.content,
+                        hash_before: entry.hash_before,
+                        hash_after: entry.hash_after
                     }
                     this.history.push(saveObject);
-                    if (saveObject.type == typeFull) {
+                    if (saveObject.is_delta == 0) {
                         this.sumOfDistances = 0;
                         this.lastFullIndex = index;
                     }
@@ -115,11 +121,13 @@ export const useEssayStore = defineStore('essay',{
             lockUpdate = 1;
 
             try {
-                this.$state = startState; // todo check if referenced
+                this.$state = startState;
 
                 this.currentContent =  await storage.getItem('content') ?? '';
                 this.lastStoredIndex = await storage.getItem('lastStoredIndex') ?? -1;
-                this.historyContent = this.currentContent
+                this.lastSentIndex = await storage.getItem('lastSentIndex') ?? -1;
+                this.historyContent = this.currentContent;
+                this.historyHash = md5(this.historyContent);
 
                 let index = 0;
                 while (index <= this.lastStoredIndex) {
@@ -128,8 +136,7 @@ export const useEssayStore = defineStore('essay',{
                         break;
                     }
                     this.history.push(saveObject);
-                    this.lastSave = saveObject.time
-                    if (saveObject.type == typeFull) {
+                    if (saveObject.is_delta == 0) {
                         this.sumOfDistances = 0;
                         this.lastFullIndex = index;
                     }
@@ -167,7 +174,6 @@ export const useEssayStore = defineStore('essay',{
                 return;
             }
 
-
             try {
                 const currentContent = this.currentContent + '';   // ensure it is not changed because content is bound to tiny
                 const historyContent = this.historyContent + '';
@@ -177,6 +183,8 @@ export const useEssayStore = defineStore('essay',{
                 // create the save object if content has changed
                 //
                 if ((currentContent != historyContent)) {
+                    const currentHash = md5(currentContent);
+                    const historyHash = md5(historyContent);
 
                     // check for change and calculate the patch
                     let diffs = dmp.diff_main(historyContent, currentContent);
@@ -194,63 +202,103 @@ export const useEssayStore = defineStore('essay',{
                         || result[0] != currentContent                      // or patch is wrong
                     ) {
                         saveObject = {
-                            type: typeFull,
-                            time: currentTime,
-                            distance: 0,
+                            is_delta: 0,
+                            timestamp: this.formatTimestamp(currentTime),
                             content: currentContent,
+                            hash_before: historyHash,
+                            hash_after: currentHash
                         }
                     }
-                    // make a diff save if ...
+                    // make a delta save if ...
                     else if (distance >= saveDistance                       // enouch changed since lase save
                         || currentTime - this.lastSave > saveInterval       // enogh time since last save
                     ) {
                         saveObject = {
-                            type: typeDiff,
-                            time: currentTime,
-                            distance: distance,
+                            is_delta: 1,
+                            timestamp: this.formatTimestamp(currentTime),
                             content: difftext,
+                            hash_before: historyHash,
+                            hash_after: currentHash
                         }
                     }
-                }
 
-                //
-                // add the save object to the history
-                //
-                if (saveObject !== null) {
+                    //
+                    // add the save object to the history
+                    //
+                    if (saveObject !== null) {
 
-                    // push to history
-                    this.history.push(saveObject);
-                    this.historyContent = currentContent;
-                    const lastIndex = this.history.length - 1;
-                    if (saveObject.type == typeFull) {
-                        this.lastFullIndex = lastIndex;
-                        this.sumOfDistances = 0;
-                    } else {
-                        this.sumOfDistances = this.sumOfDistances + saveObject.distance;
+                        // push to history
+                        this.history.push(saveObject);
+                        this.historyContent = currentContent;
+                        this.historyHash = historyHash;
+                        const lastIndex = this.history.length - 1;
+                        if (saveObject.is_delta == 0) {
+                            this.lastFullIndex = lastIndex;
+                            this.sumOfDistances = 0;
+                        } else {
+                            this.sumOfDistances = this.sumOfDistances + distance;
+                        }
+
+                        // save in storage
+                        // 'content' in storage always corresponds to the the last history entry (which may be delta)
+                        await storage.setItem('content', currentContent);
+                        await storage.setItem(this.formatIndex(lastIndex), saveObject);
+                        await storage.setItem('lastStoredIndex', lastIndex);
+                        this.lastStoredIndex = lastIndex;
+                        this.lastSave = currentTime;
+
+                        console.log(
+                            "Delta:", saveObject.is_delta,
+                            "| Distance (sum): ", distance, "(", this.sumOfDistances, ")",
+                            "| Editor: ", fromEditor,
+                            "| Duration:", Date.now() - currentTime, 'ms');
                     }
-
-                    // save in storage
-                    await storage.setItem('content', currentContent);
-                    await storage.setItem(this.formatIndex(lastIndex), saveObject);
-                    await storage.setItem('lastStoredIndex', lastIndex);
-                    this.lastStoredIndex = lastIndex;
-                    this.lastSave = currentTime;
-
-                    console.log(
-                        "Type:", saveObject.type,
-                        "| Distance (sum): ", saveObject.distance, "(", this.sumOfDistances, ")",
-                        "| Editor: ", fromEditor,
-                        "| Duration:", Date.now() - currentTime, 'ms');
                 }
 
                 // set this here
                 this.lastCheck = currentTime;
+
+                // trigger sending to the backend (don't wait)
+                this.sendUpdate();
             }
             catch(error) {
                 console.error(error);
             }
 
             lockUpdate = 0;
+        },
+
+        /**
+         * Send an update to the backend
+         */
+        async sendUpdate() {
+
+            // avoid parallel sendings
+            // no need to wait because update is called by interval from updateContent
+            // use post-increment for test-and set
+            if (lockSending++) {
+                return;
+            }
+
+            let steps = [];
+            let sentIndex = this.lastSentIndex;
+            let index = this.lastSentIndex + 1;
+
+            while (index < this.history.length) {
+                steps.push(this.history[index])
+                sentIndex = index++;                //post increment
+            }
+
+            if (steps.length > 0) {
+                const apiStore = useApiStore();
+                if (await apiStore.saveWritingStepsToBackend(steps))
+                {
+                    await storage.setItem('lastSentIndex', sentIndex);
+                    this.lastSentIndex = sentIndex;
+                }
+            }
+
+            lockSending = false;
         }
     }
 });
