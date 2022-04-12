@@ -168,10 +168,7 @@ export const useApiStore = defineStore('api', {
             await taskStore.loadFromData(response.data.task);
 
             const essayStore = useEssayStore();
-            await essayStore.loadFromData({
-                content: 'Hallo Welt',
-                history: []
-            });
+            await essayStore.loadFromData(response.data.essay);
         },
 
         /**
@@ -197,14 +194,12 @@ export const useApiStore = defineStore('api', {
          * Save the writing steps to the backend
          */
         async saveWritingStepsToBackend(steps) {
-            console.log("saveWritingStepsToBackend...");
-
             let response = {};
             let data = {
                 steps: steps
             }
             try {
-                response = await axios.put( '/essay', data, this.requestConfig);
+                response = await axios.put( '/steps', data, this.requestConfig);
                 this.refreshToken(response);
                 return true;
             }
