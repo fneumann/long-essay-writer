@@ -3,7 +3,6 @@ import localForage from "localforage";
 import DiffMatchPatch from 'diff-match-patch';
 import md5 from 'md5';
 import {useApiStore} from "./api";
-import {useResourcesStore} from "./resources";
 
 const storage = localForage.createInstance({
     storeName: "essay",
@@ -73,14 +72,14 @@ export const useEssayStore = defineStore('essay',{
                 this.$state = startState;
                 this.currentContent = data.content;
                 this.historyContent = data.content;
-                this.historyHash = md5(data.content);
+                this.historyHash = data.hash;
 
                 await storage.clear();
                 await storage.setItem('content', this.currentContent);
 
                 let index = 0;
-                while (index < data.history.length) {
-                    let entry = data.history[index];
+                while (index < data.steps.length) {
+                    let entry = data.steps[index];
                     let saveObject = {
                         is_delta: entry.is_delta,
                         timestamp: entry.timestamp,
@@ -98,12 +97,13 @@ export const useEssayStore = defineStore('essay',{
                     }
 
                     await storage.setItem(this.formatIndex(index), saveObject);
-                    this.lastStoredIndex = index;
                     index++;
                 }
 
                 this.lastStoredIndex = this.history.length -1;
+                this.lastSentIndex = this.history.length -1;
                 await storage.setItem('lastStoredIndex', this.lastStoredIndex);
+                await storage.setItem('lastSentIndex', this.lastSentIndex);
 
             } catch (err) {
                 console.log(err);
@@ -203,7 +203,7 @@ export const useEssayStore = defineStore('essay',{
                     ) {
                         saveObject = {
                             is_delta: 0,
-                            timestamp: this.formatTimestamp(currentTime),
+                            timestamp: Math.floor(currentTime / 1000),
                             content: currentContent,
                             hash_before: historyHash,
                             hash_after: currentHash
@@ -215,7 +215,7 @@ export const useEssayStore = defineStore('essay',{
                     ) {
                         saveObject = {
                             is_delta: 1,
-                            timestamp: this.formatTimestamp(currentTime),
+                            timestamp: Math.floor(currentTime / 1000),
                             content: difftext,
                             hash_before: historyHash,
                             hash_after: currentHash
