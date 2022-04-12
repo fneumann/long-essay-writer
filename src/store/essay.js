@@ -13,21 +13,22 @@ const dmp = new DiffMatchPatch();
 
 const checkInterval = 1000;     // time (ms) to wait for a new update check (e.g. 0.2s to 1s)
 const saveInterval = 5000;      // maximum time (ms) to wait for a new save if content is changed
-const saveDistance = 5;         // maximum levenshtein distance to wait for a new save if content is changed
+const sendInterval = 5000;      // maximum time (ms) to wait for sending open savings to the backend
+const saveDistance = 10;        // maximum levenshtein distance to wait for a new save if content is changed
 const maxDistance = 1000;       // maximum cumulated levenshtein distance of patches before a new full save is done
 
 
 const startState = {
-    currentContent: '',         // directly mapped to the editor
-    historyContent: '',         // full content of the last history entry
-    historyHash: '',            // hash of the last history entry
-    history: [],                // list of save objects
+    currentContent: '',         // directly mapped to the editor, changes permanently
+    historyContent: '',         // full content corresponding to the last history entry (which may be delta)
+    history: [],                // list of save objects for the writing steps
     sumOfDistances: 0,          // sum of levenshtine distances sice the last full save
-    lastFullIndex: -1,          // history index of the last full save
+    lastFullIndex: -1,          // history index of the last full save (no delta)
     lastStoredIndex: -1,        // history index of the last save in the store
     lastSentIndex: -1,          // history index of the last sending to the backend
     lastCheck: 0,               // timestamp of the last check if an update needs a saving
     lastSave: 0,                // timestamp of the last save in the store
+    lastSending: 0              // timestamp of the last sending to the backend
 }
 
 let lockUpdate = 0;             // prevent updates during a processing
@@ -56,10 +57,33 @@ export const useEssayStore = defineStore('essay',{
         },
         formatIndex() {
             return (index) => index.toString().padStart(9, '0');
+        },
+        makeHash() {
+            // hash should be unique, so add the timestamp as salt
+            // use only seconds, so that it cam be verified from data on server side
+            return (content, timestamp) => md5(content + Math.floor(timestamp / 1000));
         }
     },
 
     actions: {
+
+        /**
+         * Push a save object to the history in the state
+         * @param saveObject
+         * @param integer
+         * @returns integer index of the pushed object
+         */
+        addToHistory(saveObject, distance = 0) {
+            let lastIndex = this.history.push(saveObject) - 1;
+            if (saveObject.is_delta) {
+                this.sumOfDistances += distance;
+            }
+            else {
+                this.sumOfDistances = 0;
+                this.lastFullIndex = lastIndex;
+            }
+            return lastIndex
+        },
 
         /**
          * Load the full state from external data and save it to the storage
@@ -72,7 +96,6 @@ export const useEssayStore = defineStore('essay',{
                 this.$state = startState;
                 this.currentContent = data.content;
                 this.historyContent = data.content;
-                this.historyHash = data.hash;
 
                 await storage.clear();
                 await storage.setItem('content', this.currentContent);
@@ -87,15 +110,7 @@ export const useEssayStore = defineStore('essay',{
                         hash_before: entry.hash_before,
                         hash_after: entry.hash_after
                     }
-                    this.history.push(saveObject);
-                    if (saveObject.is_delta == 0) {
-                        this.sumOfDistances = 0;
-                        this.lastFullIndex = index;
-                    }
-                    else {
-                        this.sumOfDistances += saveObject.distance;
-                    }
-
+                    this.addToHistory(saveObject);
                     await storage.setItem(this.formatIndex(index), saveObject);
                     index++;
                 }
@@ -123,11 +138,10 @@ export const useEssayStore = defineStore('essay',{
             try {
                 this.$state = startState;
 
-                this.currentContent =  await storage.getItem('content') ?? '';
                 this.lastStoredIndex = await storage.getItem('lastStoredIndex') ?? -1;
                 this.lastSentIndex = await storage.getItem('lastSentIndex') ?? -1;
+                this.currentContent =  await storage.getItem('content') ?? '';
                 this.historyContent = this.currentContent;
-                this.historyHash = md5(this.historyContent);
 
                 let index = 0;
                 while (index <= this.lastStoredIndex) {
@@ -135,14 +149,7 @@ export const useEssayStore = defineStore('essay',{
                     if (saveObject == null) {
                         break;
                     }
-                    this.history.push(saveObject);
-                    if (saveObject.is_delta == 0) {
-                        this.sumOfDistances = 0;
-                        this.lastFullIndex = index;
-                    }
-                    else {
-                        this.sumOfDistances += saveObject.distance;
-                    }
+                    this.addToHistory(saveObject);
                     index++;
                 }
 
@@ -158,6 +165,10 @@ export const useEssayStore = defineStore('essay',{
         /**
          * Update the stored content
          * Triggered from the editor component when the content is changed
+         * Triggered every checkInterval
+         * Push current content to the history
+         * Save it in the browser storage
+         * Call sending to the backend (don't wait)
          */
         async updateContent(fromEditor = false) {
 
@@ -168,7 +179,7 @@ export const useEssayStore = defineStore('essay',{
             }
 
             // avoid parallel updates
-            // no need to wait because update is checked by interval
+            // no need to wait because updateContent is called by interval
             // use post-increment for test-and set
             if (lockUpdate++) {
                 return;
@@ -183,8 +194,8 @@ export const useEssayStore = defineStore('essay',{
                 // create the save object if content has changed
                 //
                 if ((currentContent != historyContent)) {
-                    const currentHash = md5(currentContent);
-                    const historyHash = md5(historyContent);
+                    const currentHash = this.makeHash(currentContent, currentTime);
+                    const historyHash = this.makeHash(historyContent, this.lastSave);
 
                     // check for change and calculate the patch
                     let diffs = dmp.diff_main(historyContent, currentContent);
@@ -228,24 +239,15 @@ export const useEssayStore = defineStore('essay',{
                     if (saveObject !== null) {
 
                         // push to history
-                        this.history.push(saveObject);
-                        this.historyContent = currentContent;
-                        this.historyHash = historyHash;
-                        const lastIndex = this.history.length - 1;
-                        if (saveObject.is_delta == 0) {
-                            this.lastFullIndex = lastIndex;
-                            this.sumOfDistances = 0;
-                        } else {
-                            this.sumOfDistances = this.sumOfDistances + distance;
-                        }
+                        this.lastStoredIndex = this.addToHistory(saveObject, distance);
+                        this.lastSave = currentTime;
+                        this.historyContent = this.currentContent;
 
                         // save in storage
                         // 'content' in storage always corresponds to the the last history entry (which may be delta)
                         await storage.setItem('content', currentContent);
-                        await storage.setItem(this.formatIndex(lastIndex), saveObject);
-                        await storage.setItem('lastStoredIndex', lastIndex);
-                        this.lastStoredIndex = lastIndex;
-                        this.lastSave = currentTime;
+                        await storage.setItem(this.formatIndex(this.lastStoredIndex), saveObject);
+                        await storage.setItem('lastStoredIndex', this.lastStoredIndex);
 
                         console.log(
                             "Delta:", saveObject.is_delta,
@@ -270,11 +272,18 @@ export const useEssayStore = defineStore('essay',{
 
         /**
          * Send an update to the backend
+         * Called from updateContent() without wait
          */
         async sendUpdate() {
 
+            // avoid too many sendings
+            // sendUpdate is called from updateContent with the checkInterval
+            if (Date.now() - this.lastSending < sendInterval) {
+                return;
+            }
+
             // avoid parallel sendings
-            // no need to wait because update is called by interval from updateContent
+            // no need to wait because sendUpdate is called by interval
             // use post-increment for test-and set
             if (lockSending++) {
                 return;
@@ -293,9 +302,10 @@ export const useEssayStore = defineStore('essay',{
                 const apiStore = useApiStore();
                 if (await apiStore.saveWritingStepsToBackend(steps))
                 {
-                    await storage.setItem('lastSentIndex', sentIndex);
                     this.lastSentIndex = sentIndex;
+                    await storage.setItem('lastSentIndex', sentIndex);
                 }
+                this.lastSending = Date.now();
             }
 
             lockSending = false;
