@@ -8,6 +8,7 @@ const storage = localForage.createInstance({
 
 /**
  * Layout Store
+ * Handles visibility of user interface components
  */
 export const useLayoutStore = defineStore('layout',{
     state: () => {

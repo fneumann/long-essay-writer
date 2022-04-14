@@ -8,6 +8,7 @@ import {useEssayStore} from "./essay";
 
 /**
  * API Store
+ * Handles the communication with the backend
  */
 export const useApiStore = defineStore('api', {
     state: () => {

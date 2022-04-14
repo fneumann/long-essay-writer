@@ -7,7 +7,7 @@ const storage = localForage.createInstance({
 });
 
 /**
- * Task Store
+ * Resources Store
  */
 export const useResourcesStore = defineStore('resources',{
     state: () => {

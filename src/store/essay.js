@@ -36,6 +36,7 @@ let lockSending = 0;            // prevent multiple sendings at the same time
 
 /**
  * Essay store
+ * Handles the written text of the user
  */
 export const useEssayStore = defineStore('essay',{
 

@@ -8,6 +8,7 @@ const storage = localForage.createInstance({
 
 /**
  * Task Store
+ * Handles settings of the writing task
  */
 export const useTaskStore = defineStore('task',{
     state: () => {
