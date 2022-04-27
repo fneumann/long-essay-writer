@@ -8,6 +8,7 @@
 <template>
   <v-app-bar position="bottom" height="48" color="grey-lighten-5" elevation="1">
     initialized: {{apiStore.initialized}} |
-    history: {{essayStore.historyLength}}
+    history: {{essayStore.historyLength}} |
+    unsent: {{essayStore.openSendings}}
   </v-app-bar>
 </template>

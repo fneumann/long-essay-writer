@@ -18,6 +18,24 @@ import Editor from '@tinymce/tinymce-vue'
 import {useEssayStore} from '@/store/essay';
 const essayStore = useEssayStore();
 
+import {useSettingsStore} from "../store/settings";
+const settingsStore = useSettingsStore();
+
+function toolbar() {
+  switch (settingsStore.formatting_options)
+  {
+    case 'full':
+      return 'undo redo | formatselect | bold italic underline | bullist numlist | removeformat | charmap';
+    case 'medium':
+      return 'undo redo | bold italic underline | bullist numlist | removeformat | charmap';
+    case 'minimal':
+      return 'undo redo | bold italic underline | removeformat | charmap';
+    case 'none':
+    default:
+      return 'undo redo | charmap';
+  }
+}
+
 // Used for retrieving the editor instance using the tinymce.get('ID') method.
 const id = "essay";
 </script>
@@ -32,12 +50,8 @@ const id = "essay";
       :init="{
         height: '100%',
         menubar: false,
-        plugins:
-           'lists charmap'
-        ,
-        toolbar:
-           'undo redo | formatselect | bold italic | \
-           bullist numlist outdent indent | removeformat | charmap',
+        plugins: 'lists charmap',
+        toolbar: toolbar(),
         custom_undo_redo_levels: 10
        }"
   />

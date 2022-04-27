@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import axios from 'axios'
 import Cookies from 'js-cookie';
+import {useSettingsStore} from "./settings";
 import {useTaskStore} from "./task";
 import {useLayoutStore} from "./layout";
 import {useResourcesStore} from "./resources";
@@ -165,6 +166,9 @@ export const useApiStore = defineStore('api', {
                 return;
             }
 
+            const settingsStore = useSettingsStore();
+            await settingsStore.loadFromData(response.data.settings);
+
             const taskStore = useTaskStore();
             await taskStore.loadFromData(response.data.task);
 
@@ -177,6 +181,9 @@ export const useApiStore = defineStore('api', {
          */
         async loadDataFromStorage() {
             console.log("loadDataFromStorage...");
+
+            const settings = useSettingsStore();
+            await settings.loadFromStorage();
 
             const taskStore = useTaskStore();
             await taskStore.loadFromStorage();
