@@ -35,11 +35,11 @@
       <v-menu activator="parent" anchor="bottom end" origin="end top">
         <v-card>
           <v-list>
+            <v-list-item :href="apiStore.returnUrl">
+              <v-list-item-title>Unterbrechen...</v-list-item-title>
+            </v-list-item>
             <v-list-item @click="apiStore.review=true">
               <v-list-item-title>Vorschau / Abgabe ...</v-list-item-title>
-            </v-list-item>
-            <v-list-item :href="apiStore.returnUrl">
-              <v-list-item-title>Unterbrechen</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>

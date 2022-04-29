@@ -16,8 +16,8 @@ export const useApiStore = defineStore('api', {
         return {
             initialized: false,
             review: false,
-            toReload: false,
             showInitFailure: false,
+            showReplaceConfirmation: false,
             showReloadConfirmation: false,
 
             backendUrl: '',
@@ -68,6 +68,9 @@ export const useApiStore = defineStore('api', {
          */
         async init () {
 
+            let newContext = false;
+            let lastHash = Cookies.get('LongEssayHash');
+
             // take values formerly stored
             this.backendUrl = localStorage.getItem('backendUrl');
             this.returnUrl = localStorage.getItem('returnUrl');
@@ -78,11 +81,11 @@ export const useApiStore = defineStore('api', {
             // check if context given by cookies differs and force a reload if neccessary
             if (!!Cookies.get('LongEssayUser') && Cookies.get('LongEssayUser') !== this.userKey) {
                 this.userKey = Cookies.get('LongEssayUser');
-                this.toReload = true;
+                newContext = true;
             }
             if (!!Cookies.get('LongEssayEnvironment') && Cookies.get('LongEssayEnvironment') !== this.environmentKey) {
                 this.environmentKey = Cookies.get('LongEssayEnvironment');
-                this.toReload = true;
+                newContext = true;
             }
 
             // these values can be changed without forcing a reload
@@ -96,63 +99,69 @@ export const useApiStore = defineStore('api', {
                 this.authToken = Cookies.get('LongEssayToken');
             }
 
-             // check what to do
-            if (!!this.backendUrl && !!this.returnUrl && !!this.userKey && !!this.environmentKey && !!this.authToken) {
+            if (!this.backendUrl || !this.returnUrl || !this.userKey || !this.environmentKey || !this.authToken)
+            {
+                this.showInitFailure = true;
+                return;
+            }
 
-                if (this.toReload) {
-                    const essayStore = useEssayStore();
-                    if (await essayStore.hasUnsentSavingsInStorage()) {
-                        this.showReloadConfirmation = true;
-                    }
-                    else {
-                        this.configure();
-                    }
+            const essayStore = useEssayStore();
+
+            if (newContext) {
+                // switching to a new task or user always requires a load from the backend
+                // be shure that existing data is not unintentionally replaced
+
+                if (await essayStore.hasUnsentSavingsInStorage()) {
+                    console.log('init: new context, open savings');
+                    this.showReplaceConfirmation = true;
                 }
                 else {
-                    this.configure();
+                    console.log('init: new context, no open savings');
+                    await this.loadDataFromBackend();
+                }
+            }
+            else if (lastHash) {
+                // savings already exists on the server
+                // check that it matches with the data in the app
+
+                if (await essayStore.hasHashInStorage(lastHash)) {
+                    console.log('init: same context, same hash');
+                    await this.loadDataFromStorage();
+                }
+                else if (await essayStore.hasUnsentSavingsInStorage()) {
+                    console.log('init: same context, hashes differ, open savings');
+                    this.showReloadConfirmation = true;
+                }
+                else {
+                    console.log('init: same context, hashes differ, no open savings');
+                    await this.loadDataFromBackend();
                 }
             }
             else {
-                this.showInitFailure = true;
+                // no savings exist on the server
+                // check if data is already entered but not sent
+
+                if (await essayStore.hasUnsentSavingsInStorage()) {
+                    console.log('init: same context, no server hash, open savings');
+                    await this.loadDataFromStorage();
+                }
+                else {
+                    console.log('init: same context, no server hash, no open savings');
+                    await this.loadDataFromBackend();
+                }
             }
         },
 
-        /**
-         * Configure the app
-         * This is called when the initialisation can be done silently
-         * Or when a confirmation dialog is confirmed
-         */
-        async configure() {
-
-            // remove the cookies
-            // needed to distinct the call from the backend from a later reload
-            Cookies.remove('LongEssayBackend');
-            Cookies.remove('LongEssayReturn');
-            Cookies.remove('LongEssayUser');
-            Cookies.remove('LongEssayEnvironment');
-            Cookies.remove('LongEssayToken');
-
-            localStorage.setItem('backendUrl', this.backendUrl);
-            localStorage.setItem('returnUrl', this.returnUrl);
-            localStorage.setItem('userKey', this.userKey);
-            localStorage.setItem('environmentKey', this.environmentKey);
-            localStorage.setItem('authToken', this.authToken);
-
-            if (this.toReload) {
-                await this.loadDataFromBackend();
-            } else {
-                await this.loadDataFromStorage();
-            }
-
-            this.initialized = true;
-        },
 
 
         /**
          * Load all data from the backend
          */
         async loadDataFromBackend() {
+
             console.log("loadDataFromBackend...");
+            this.updateConfig();
+
             let response = {};
             try {
                 response = await axios.get( '/data', this.requestConfig);
@@ -160,6 +169,7 @@ export const useApiStore = defineStore('api', {
             }
             catch (error) {
                 console.error(error);
+                this.showInitFailure = true;
                 return;
             }
 
@@ -171,13 +181,17 @@ export const useApiStore = defineStore('api', {
 
             const essayStore = useEssayStore();
             await essayStore.loadFromData(response.data.essay);
+
+            this.initialized = true;
         },
 
         /**
          * Load all data from the storage
          */
         async loadDataFromStorage() {
+
             console.log("loadDataFromStorage...");
+            this.updateConfig();
 
             const settings = useSettingsStore();
             await settings.loadFromStorage();
@@ -193,6 +207,8 @@ export const useApiStore = defineStore('api', {
 
             const essayStore = useEssayStore();
             await essayStore.loadFromStorage();
+
+            this.initialized = true;
         },
 
         /**
@@ -212,6 +228,29 @@ export const useApiStore = defineStore('api', {
                 console.error(error);
                 return false;
             }
+        },
+
+        /**
+         * Configure the app
+         * This is called when the initialisation can be done silently
+         * Or when a confirmation dialog is confirmed
+         */
+        updateConfig() {
+
+            // remove the cookies
+            // needed to distinct the call from the backend from a later reload
+            Cookies.remove('LongEssayBackend');
+            Cookies.remove('LongEssayReturn');
+            Cookies.remove('LongEssayUser');
+            Cookies.remove('LongEssayEnvironment');
+            Cookies.remove('LongEssayToken');
+            Cookies.remove('LongEssayHash');
+
+            localStorage.setItem('backendUrl', this.backendUrl);
+            localStorage.setItem('returnUrl', this.returnUrl);
+            localStorage.setItem('userKey', this.userKey);
+            localStorage.setItem('environmentKey', this.environmentKey);
+            localStorage.setItem('authToken', this.authToken);
         },
 
         /**

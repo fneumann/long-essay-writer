@@ -26,9 +26,10 @@ const startState = {
     lastFullIndex: -1,          // history index of the last full save (no delta)
     lastStoredIndex: -1,        // history index of the last save in the store
     lastSentIndex: -1,          // history index of the last sending to the backend
+    lastSentHash: '',           // hash of the last saving stored on the server
     lastCheck: 0,               // timestamp of the last check if an update needs a saving
     lastSave: 0,                // timestamp of the last save in the store
-    lastSending: 0              // timestamp of the last sending to the backend
+    lastSending: 0,             // timestamp of the last sending to the backend
 }
 
 let lockUpdate = 0;             // prevent updates during a processing
@@ -41,12 +42,7 @@ let lockSending = 0;            // prevent multiple sendings at the same time
 export const useEssayStore = defineStore('essay',{
 
     state: () => {
-
-        // todo: check if state is set as a reference, then use the alternative way
         return startState;
-
-        // alternative deep copy
-        // return JSON.parse(JSON.stringify(startState));
     },
 
     getters: {
@@ -119,8 +115,10 @@ export const useEssayStore = defineStore('essay',{
 
                 this.lastStoredIndex = this.history.length -1;
                 this.lastSentIndex = this.history.length -1;
+                this.lastSentHash = data.hash;
                 await storage.setItem('lastStoredIndex', this.lastStoredIndex);
                 await storage.setItem('lastSentIndex', this.lastSentIndex);
+                await storage.setItem('lastSentHash',  this.lastSentHash);
 
             } catch (err) {
                 console.log(err);
@@ -142,6 +140,7 @@ export const useEssayStore = defineStore('essay',{
 
                 this.lastStoredIndex = await storage.getItem('lastStoredIndex') ?? -1;
                 this.lastSentIndex = await storage.getItem('lastSentIndex') ?? -1;
+                this.lastSentHash = await storage.getItem('lastSentHash') ?? '';
                 this.currentContent =  await storage.getItem('content') ?? '';
                 this.historyContent = this.currentContent;
 
@@ -286,18 +285,20 @@ export const useEssayStore = defineStore('essay',{
 
             // avoid parallel sendings
             // no need to wait because sendUpdate is called by interval
-            // use post-increment for test-and set
+            // use post-increment for test-and-set
             if (lockSending++) {
                 return;
             }
 
             let steps = [];
             let sentIndex = this.lastSentIndex;
+            let sentHash = this.lastSentHash;
             let index = this.lastSentIndex + 1;
 
             while (index < this.history.length) {
                 steps.push(this.history[index])
-                sentIndex = index++;                //post increment
+                sentHash = this.history[index].hash_after
+                sentIndex = index++;                        //post increment
             }
 
             if (steps.length > 0) {
@@ -306,6 +307,7 @@ export const useEssayStore = defineStore('essay',{
                 {
                     this.lastSentIndex = sentIndex;
                     await storage.setItem('lastSentIndex', sentIndex);
+                    await storage.setItem('lastSentHash', sentHash);
                 }
                 this.lastSending = Date.now();
             }
@@ -315,12 +317,22 @@ export const useEssayStore = defineStore('essay',{
 
         /**
          * Check if unsent savings are in the storage
+         * (called from api store at initialisation)
          */
         async hasUnsentSavingsInStorage() {
             this.lastStoredIndex = await storage.getItem('lastStoredIndex') ?? -1;
             this.lastSentIndex = await storage.getItem('lastSentIndex') ?? -1;
 
             return this.lastStoredIndex > this.lastSentIndex;
+        },
+
+        /**
+         * Check if the current hash from the server is saved in the storage
+         * (called from api store at initialisation)
+         */
+        async hasHashInStorage(hash) {
+            this.lastSentHash = await storage.getItem('lastSentHash') ?? '';
+            return hash == this.lastSentHash;
         }
     }
 });
