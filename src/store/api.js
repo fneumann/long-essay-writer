@@ -15,13 +15,16 @@ export const useApiStore = defineStore('api', {
     state: () => {
         return {
             initialized: false,
+            toReload: false,
+            showInitFailure: false,
+            showReloadConfirmation: false,
+
             backendUrl: '',
             returnUrl: '',
             userKey: '',
             environmentKey: '',
-            authToken: ''
+            authToken: '',
         }
-
     },
 
     getters: {
@@ -56,72 +59,69 @@ export const useApiStore = defineStore('api', {
 
 
     actions: {
-        setInitialized(initialized) {
-            this.initialized = initialized;
-        },
-        setBackendUrl(url) {
-            this.backendUrl = url;
-            localStorage.setItem('backendUrl', url);
-        },
-        setReturnUrl(url) {
-            this.returnUrl = url;
-            localStorage.setItem('returnUrl', url);
-        },
-        setUserKey(key) {
-            this.userKey = key;
-            localStorage.setItem('userKey', key);
-        },
-        setEnvironmentKey(key) {
-            this.environmentKey = key;
-            localStorage.setItem('environmentKey', key);
-        },
-        setAuthToken(token) {
-            this.authToken = token;
-            localStorage.setItem('authToken', token);
-        },
-        refreshToken(response) {
-            this.authToken = response.headers['longessaytoken'];
-            localStorage.setItem('authToken', this.authToken);
-        },
 
         /**
          * Init the state
          * Take the state from the cookies or local store
-         * Trigger a reload of all data if cookie valies differ from local store
+         * Trigger a reload of all data if cookie values differ from local store
          */
         async init () {
 
-            let toReload = false;
-
             // take values formerly stored
-            let backendUrl = localStorage.getItem('backendUrl');
-            let returnUrl = localStorage.getItem('returnUrl');
-            let userKey = localStorage.getItem('userKey');
-            let environmentKey = localStorage.getItem('environmentKey');
-            let authToken = localStorage.getItem('authToken');
+            this.backendUrl = localStorage.getItem('backendUrl');
+            this.returnUrl = localStorage.getItem('returnUrl');
+            this.userKey = localStorage.getItem('userKey');
+            this.environmentKey = localStorage.getItem('environmentKey');
+            this.authToken = localStorage.getItem('authToken');
 
+            // check if context given by cookies differs and force a reload if neccessary
+            if (!!Cookies.get('LongEssayUser') && Cookies.get('LongEssayUser') !== this.userKey) {
+                this.userKey = Cookies.get('LongEssayUser');
+                this.toReload = true;
+            }
+            if (!!Cookies.get('LongEssayEnvironment') && Cookies.get('LongEssayEnvironment') !== this.environmentKey) {
+                this.environmentKey = Cookies.get('LongEssayEnvironment');
+                this.toReload = true;
+            }
 
-            // check if cookie values differ and force a reload
-            if (!!Cookies.get('LongEssayBackend') && Cookies.get('LongEssayBackend') !== backendUrl) {
-                backendUrl = Cookies.get('LongEssayBackend');
-                toReload = true;
+            // these values can be changed without forcing a reload
+            if (!!Cookies.get('LongEssayBackend') && Cookies.get('LongEssayBackend') !== this.backendUrl) {
+                this.backendUrl = Cookies.get('LongEssayBackend');
             }
-            if (!!Cookies.get('LongEssayReturn') && Cookies.get('LongEssayReturn') !== returnUrl) {
-                returnUrl = Cookies.get('LongEssayReturn');
-                toReload = true;
+            if (!!Cookies.get('LongEssayReturn') && Cookies.get('LongEssayReturn') !== this.returnUrl) {
+                this.returnUrl = Cookies.get('LongEssayReturn');
             }
-            if (!!Cookies.get('LongEssayUser') && Cookies.get('LongEssayUser') !== userKey) {
-                userKey = Cookies.get('LongEssayUser');
-                toReload = true;
+            if (!!Cookies.get('LongEssayToken') && Cookies.get('LongEssayToken') !== this.authToken) {
+                this.authToken = Cookies.get('LongEssayToken');
             }
-            if (!!Cookies.get('LongEssayEnvironment') && Cookies.get('LongEssayEnvironment') !== environmentKey) {
-                environmentKey = Cookies.get('LongEssayEnvironment');
-                toReload = true;
+
+             // check what to do
+            if (!!this.backendUrl && !!this.returnUrl && !!this.userKey && !!this.environmentKey && !!this.authToken) {
+
+                if (this.toReload) {
+                    const essayStore = useEssayStore();
+                    if (await essayStore.hasUnsentSavingsInStorage()) {
+                        this.showReloadConfirmation = true;
+                    }
+                    else {
+                        this.configure();
+                    }
+                }
+                else {
+                    this.configure();
+                }
             }
-            if (!!Cookies.get('LongEssayToken') && Cookies.get('LongEssayToken') !== authToken) {
-                authToken = Cookies.get('LongEssayToken');
-                toReload = true;
+            else {
+                this.showInitFailure = true;
             }
+        },
+
+        /**
+         * Configure the app
+         * This is called when the initialisation can be done silently
+         * Or when a confirmation dialog is confirmed
+         */
+        async configure() {
 
             // remove the cookies
             // needed to distinct the call from the backend from a later reload
@@ -131,25 +131,21 @@ export const useApiStore = defineStore('api', {
             Cookies.remove('LongEssayEnvironment');
             Cookies.remove('LongEssayToken');
 
-            // save the current values
-            if (!!backendUrl && !!returnUrl && !!userKey && !!environmentKey && !!authToken) {
-                this.setBackendUrl(backendUrl);
-                this.setReturnUrl(returnUrl);
-                this.setUserKey(userKey);
-                this.setEnvironmentKey(environmentKey);
-                this.setAuthToken(authToken);
+            localStorage.setItem('backendUrl', this.backendUrl);
+            localStorage.setItem('returnUrl', this.returnUrl);
+            localStorage.setItem('userKey', this.userKey);
+            localStorage.setItem('environmentKey', this.environmentKey);
+            localStorage.setItem('authToken', this.authToken);
 
-                if (toReload) {
-                    await this.loadDataFromBackend();
-                }
-                else {
-                    await this.loadDataFromStorage();
-                }
-
-
-                this.setInitialized(true);
+            if (this.toReload) {
+                await this.loadDataFromBackend();
+            } else {
+                await this.loadDataFromStorage();
             }
+
+            this.initialized = true;
         },
+
 
         /**
          * Load all data from the backend
@@ -215,6 +211,15 @@ export const useApiStore = defineStore('api', {
                 console.error(error);
                 return false;
             }
-        }
+        },
+
+        /**
+         * Refresh the auth token with the value from the REST response
+         */
+        refreshToken(response) {
+            this.authToken = response.headers['longessaytoken'];
+            localStorage.setItem('authToken', this.authToken);
+        },
+
     }
 })

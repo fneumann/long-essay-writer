@@ -311,6 +311,16 @@ export const useEssayStore = defineStore('essay',{
             }
 
             lockSending = false;
+        },
+
+        /**
+         * Check if unsent savings are in the storage
+         */
+        async hasUnsentSavingsInStorage() {
+            this.lastStoredIndex = await storage.getItem('lastStoredIndex') ?? -1;
+            this.lastSentIndex = await storage.getItem('lastSentIndex') ?? -1;
+
+            return this.lastStoredIndex > this.lastSentIndex;
         }
     }
 });
