@@ -28,9 +28,22 @@
     </v-btn>
 -->
 
-    <v-btn :href="apiStore.returnUrl">
+    <v-btn v-show="!apiStore.review">
       <v-icon left icon="mdi-logout-variant"></v-icon>
       <span>Beenden ...</span>
+
+      <v-menu activator="parent" anchor="bottom end" origin="end top">
+        <v-card>
+          <v-list>
+            <v-list-item @click="apiStore.review=true">
+              <v-list-item-title>Vorschau / Abgabe ...</v-list-item-title>
+            </v-list-item>
+            <v-list-item :href="apiStore.returnUrl">
+              <v-list-item-title>Unterbrechen</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-menu>
     </v-btn>
   </v-app-bar>
 

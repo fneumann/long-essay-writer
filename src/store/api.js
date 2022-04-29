@@ -15,6 +15,7 @@ export const useApiStore = defineStore('api', {
     state: () => {
         return {
             initialized: false,
+            review: false,
             toReload: false,
             showInitFailure: false,
             showReloadConfirmation: false,

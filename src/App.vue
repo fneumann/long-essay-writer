@@ -8,7 +8,7 @@ import NavBar from "@/components/NavBar.vue";
 import StateBar from "@/components/StateBar.vue";
 import MainContent from "@/components/MainContent.vue";
 import StartupContent from "@/components/StartupContent.vue";
-
+import ReviewContent from "@/components/ReviewContent.vue";
 import {useApiStore} from '@/store/api';
 
 const apiStore = useApiStore();
@@ -22,8 +22,10 @@ apiStore.init();
 
       <app-bar v-if="apiStore.initialized"/>
       <state-bar v-if="apiStore.initialized"/>
-      <nav-bar v-if="apiStore.initialized"/>
-      <main-content v-if="apiStore.initialized" />
+      <nav-bar v-if="apiStore.initialized && !apiStore.review"/>
+      <main-content v-if="apiStore.initialized && !apiStore.review"/>
+
+      <review-content v-if="apiStore.initialized && apiStore.review"/>
     </v-app>
 </template>
 
