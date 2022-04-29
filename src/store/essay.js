@@ -52,7 +52,7 @@ export const useEssayStore = defineStore('essay',{
     getters: {
         hasHistory: (state) => state.history.length > 0,
         historyLength: (state) => state.history.length,
-        openSendings: (state) => state.history.length - state.lastSentIndex -1,
+        openSendings: (state) => state.lastStoredIndex - state.lastSentIndex,
 
         formatTimestamp() {
             return (timestamp) => (new Date(timestamp)).toISOString().slice(0, 19).replace('T', ' ');
