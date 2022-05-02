@@ -1,12 +1,17 @@
 <script setup>
-  import {useApiStore} from '@/store/api';
-  import {useTaskStore} from "../store/task";
-  const apiStore = useApiStore();
-  const taskStore = useTaskStore();
 
-  function getTitle() {
-    return (taskStore.writer_name == null ? '' : taskStore.writer_name + ', ') + (taskStore.title ?? '');
-  }
+/**
+ * AApplication bar
+ */
+import Timer from "@/components/Timer.vue";
+import {useApiStore} from '@/store/api';
+import {useTaskStore} from "../store/task";
+const apiStore = useApiStore();
+const taskStore = useTaskStore();
+
+function getTitle() {
+  return (taskStore.writer_name == null ? '' : taskStore.writer_name + ', ') + (taskStore.title ?? '');
+}
 </script>
 
 <template>
@@ -20,13 +25,7 @@
       <span>0 Mitteilungen</span>
     </v-btn>
 -->
-
-<!--
-    <v-btn>
-      <v-icon left icon="mdi-clock-outline"></v-icon>
-      <span>Restzeit 02:13h</span>
-    </v-btn>
--->
+    <timer v-if="taskStore.hasWritingEnd"></timer>
 
     <v-btn v-show="!apiStore.review">
       <v-icon left icon="mdi-logout-variant"></v-icon>

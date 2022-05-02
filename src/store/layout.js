@@ -15,7 +15,8 @@ export const useLayoutStore = defineStore('layout',{
         return {
             expandedColumn: 'left',         // left|right|none
             leftContent: 'instructions',    // instructions
-            rightContent: 'essay'           // essay
+            rightContent: 'essay',          // essay
+            showTimer: true
         }
     },
 
@@ -44,6 +45,7 @@ export const useLayoutStore = defineStore('layout',{
                 this.expandedColumn = data.expandedColumn;
                 this.leftContent = data.leftContent;
                 this.rightContent = data.rightContent;
+                this.showTimer = data.showTimer;
 
             } catch (err) {
                 console.log(err);
@@ -55,7 +57,8 @@ export const useLayoutStore = defineStore('layout',{
                 await storage.setItem('layout', {
                     expandedColumn: this.expandedColumn,
                     leftContent: this.leftContent,
-                    rightContent: this.rightContent
+                    rightContent: this.rightContent,
+                    showTimer: this.showTimer
                 })
             } catch (err) {
                 console.log(err);
@@ -101,6 +104,11 @@ export const useLayoutStore = defineStore('layout',{
 
         setRightExpanded(expanded) {
             this.expandedColumn = expanded ? 'right' : 'none';
+            this.saveToStorage();
+        },
+
+        toggleTimer() {
+            this.showTimer = !this.showTimer;
             this.saveToStorage();
         }
     }

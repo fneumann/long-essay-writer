@@ -25,6 +25,7 @@ export const useApiStore = defineStore('api', {
             userKey: '',
             environmentKey: '',
             authToken: '',
+            timeOffset: 0
         }
     },
 
@@ -77,6 +78,7 @@ export const useApiStore = defineStore('api', {
             this.userKey = localStorage.getItem('userKey');
             this.environmentKey = localStorage.getItem('environmentKey');
             this.authToken = localStorage.getItem('authToken');
+            this.timeOffset = Math.floor(localStorage.getItem('timeOffset') ?? 0);
 
             // check if context given by cookies differs and force a reload if neccessary
             if (!!Cookies.get('LongEssayUser') && Cookies.get('LongEssayUser') !== this.userKey) {
@@ -165,6 +167,7 @@ export const useApiStore = defineStore('api', {
             let response = {};
             try {
                 response = await axios.get( '/data', this.requestConfig);
+                this.setTimeOffset(response);
                 this.refreshToken(response);
             }
             catch (error) {
@@ -251,6 +254,19 @@ export const useApiStore = defineStore('api', {
             localStorage.setItem('userKey', this.userKey);
             localStorage.setItem('environmentKey', this.environmentKey);
             localStorage.setItem('authToken', this.authToken);
+        },
+
+
+        /**
+         * Set the offset between server time and client time
+         * (used to calculate the correct remaining time of the task)
+         */
+        setTimeOffset(response) {
+            const serverTime = response.headers['longessaytime'] * 1000;
+            const clientTime = Date.now();
+
+            this.timeOffset = clientTime - serverTime;
+            localStorage.setItem('timeOffset', this.timeOffset);
         },
 
         /**

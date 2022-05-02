@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia';
 import localForage from "localforage";
+import {useApiStore} from "./api";
 
 const storage = localForage.createInstance({
     storeName: "task",
     description: "Task data",
 });
+
+
+
 
 /**
  * Task Store
@@ -18,6 +22,17 @@ export const useTaskStore = defineStore('task',{
             instructions: null,
             writing_end: null
         }
+    },
+
+    getters: {
+        hasWritingEnd: (state) => !!state.writing_end,
+        writingEndReached: (state) => state.hasWritingEnd && state.remainingTime > 0,
+        remainingTime: function(state) {
+            const apiStore = useApiStore();
+            return function () {
+                return state.writing_end * 1000 + apiStore.timeOffset - Date.now()
+            }
+        },
     },
 
     actions: {
