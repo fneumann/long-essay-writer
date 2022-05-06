@@ -7,13 +7,19 @@
   const layoutStore = useLayoutStore();
 
   let remainingTime = ref('');
+  let showClock = ref(true);
+
   updateTimer();
 
   function updateTimer() {
       if (taskStore.writingEndReached) {
-        remainingTime = 'Bearbeitung beendet';
+        remainingTime.value = 'Bearbeitung beendet';
+        showClock.value = false;
       }
-      remainingTime.value = formatTimespan(taskStore.remainingTime());
+      else {
+        remainingTime.value = formatTimespan(taskStore.remainingTime());
+        showClock.value = true;
+      }
   }
 
   /**
@@ -51,7 +57,7 @@
 
 
 <template>
-  <v-btn @click="layoutStore.toggleTimer()">
+  <v-btn @click="layoutStore.toggleTimer()" v-show="showClock">
     <v-icon left icon="mdi-clock-outline"></v-icon>
     <span v-show=layoutStore.showTimer>{{ remainingTime }}</span>
   </v-btn>

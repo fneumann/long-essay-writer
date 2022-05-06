@@ -34,4 +34,17 @@ apiStore.init();
 html {
   overflow-y: hidden !important;
 }
+
+/* needed for instructions and review screen, must be global */
+.col-content li {
+  margin-left: 20px;
+  margin-bottom: 5px;
+}
+
+.col-content p {
+  margin-bottom: 10px;
+}
+
+
+
 </style>

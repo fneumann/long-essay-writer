@@ -4,10 +4,10 @@
 </script>
 
 <template>
-  <div id="app-instructions" class="instructions" v-html="taskStore.instructions"></div>
+  <div id="app-instructions" v-html="taskStore.instructions"></div>
 </template>
 
-<style>
+<style scoped>
   #app-instructions {
     height: 100%;
     padding: 20px;
@@ -15,8 +15,5 @@
     overflow-y: scroll;
   }
 
-  .instructions li {
-    margin-left: 20px;
-  }
 
 </style>
