@@ -6,6 +6,7 @@ import {useTaskStore} from "./task";
 import {useLayoutStore} from "./layout";
 import {useResourcesStore} from "./resources";
 import {useEssayStore} from "./essay";
+import md5 from 'md5';
 
 /**
  * API Store
@@ -60,6 +61,32 @@ export const useApiStore = defineStore('api', {
                 timeout: 30000,             // milliseconds
                 responseType: 'json',       // default
                 responseEncoding: 'utf8',   // default
+            }
+        },
+
+        /**
+         * Get the Url for loading a file ressource
+         */
+        resourceUrl(state) {
+
+            return function (resourceKey) {
+                let baseURL = state.backendUrl;
+                let params = new URLSearchParams();
+
+                // cut query string and set it as params
+                // a REST path is added as url to the baseURL by axias calls
+                let position = baseURL.search(/\?+/);
+                if (position != -1) {
+                    params = new URLSearchParams(baseURL.substr(position))
+                    baseURL = baseURL.substr(0, position);
+                }
+
+                params.append('LongEssayUser', state.userKey);
+                params.append('LongEssayEnvironment', state.environmentKey);
+                params.append('LongEssaySignature', md5( state.userKey + state.environmentKey));
+                params.append('LongEssayResource', resourceKey);
+
+                return baseURL + '/resource?' + params.toString();
             }
         },
 
@@ -194,6 +221,9 @@ export const useApiStore = defineStore('api', {
             const taskStore = useTaskStore();
             await taskStore.loadFromData(response.data.task);
 
+            const resourcesStore = useResourcesStore();
+            await resourcesStore.loadFromData(response.data.resources);
+
             const essayStore = useEssayStore();
             await essayStore.loadFromData(response.data.essay);
 
@@ -218,14 +248,14 @@ export const useApiStore = defineStore('api', {
             const taskStore = useTaskStore();
             await taskStore.loadFromStorage();
 
-            const layoutStore = useLayoutStore();
-            await layoutStore.loadFromStorage();
-
             const resourcesStore = useResourcesStore();
             await resourcesStore.loadFromStorage();
 
             const essayStore = useEssayStore();
             await essayStore.loadFromStorage();
+
+            const layoutStore = useLayoutStore();
+            await layoutStore.loadFromStorage();
 
             this.initialized = true;
         },

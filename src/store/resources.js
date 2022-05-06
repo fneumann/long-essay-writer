@@ -12,28 +12,10 @@ const storage = localForage.createInstance({
 export const useResourcesStore = defineStore('resources',{
     state: () => {
         return {
-            // todo: saved in storage
-            resources: [
-                {
-                    id: 1,
-                    title: 'Grundgesetz',
-                    type: 'pdf',
-                    source: 'GG.pdf'
-                },
-                {
-                    id: 2,
-                    title: 'Gesetze im Internet',
-                    type: 'url',
-                    source: 'https://www.gesetze-im-internet.de',
-                },
-                {
-                    id: 3,
-                    title: 'EDUTIEK Home Page',
-                    type: 'url',
-                    source: 'https://www.edutiek.de'
-                },
-            ],
-            active_id: 0
+            // saved in storage
+            keys: [],               // list of string keys
+            resources: [],          // list of resource objects
+            activeKey: ''           // key of the active resource
         }
     },
 
@@ -42,52 +24,66 @@ export const useResourcesStore = defineStore('resources',{
         hasResources: (state) => state.resources.length > 0,
 
         activeTitle(state) {
-          const resource = state.resources.find(element => element.id == state.active_id);
+          const resource = state.resources.find(element => element.key == state.active_key);
 
           return resource ? resource.title : ""
         },
 
         getResource(state) {
-            return (id) => state.resources.find(element => element.id == id)
+            return (key) => state.resources.find(element => element.key == key)
         },
 
         isActive(state) {
-            return (resource) => state.active_id == resource.id
+            return (resource) => state.active_key == resource.key
         }
     },
 
     actions: {
         async loadFromStorage() {
             try {
-                //this.resources = await storage.getItem('resources');
-                this.active_id =  await storage.getItem('active_id');
-            } catch (err) {
-                console.log(err);
-            }
-        },
+                this.keys =  await storage.getItem('resourceKeys') ?? [];
+                this.activeKey = await storage.getItem('activeKey') ?? [];
+                this.resources = [];
 
-        async saveToStorage() {
-            try {
-                //await storage.setItem('resources', this.resources);
-                await storage.setItem('active_id', this.active_id);
+                let index = 0;
+                while (index < this.keys.length) {
+                    let resource = await storage.getItem(this.keys[index]);
+                    this.resources.push(resource);
+                }
+
             } catch (err) {
                 console.log(err);
             }
         },
 
         async loadFromData(data) {
+
             try {
-                this.resources = data.resources;
-                this.active_id = data.active_id;
-                await this.saveToStorage();
-            } catch (err) {
+                await storage.clear();
+
+                this.keys = [];
+                this.resources = [];
+
+                let index = 0;
+                while (index < data.length) {
+                    let resource = data[index];
+                    this.resources.push(resource);
+                    this.keys.push(resource.key);
+                    await storage.setItem(resource.key, resource);
+                    index++;
+                }
+
+                await storage.setItem('resourceKeys', this.keys);
+                await storage.setItem('activeKey', this.activeKey);
+            }
+            catch (err) {
                 console.log(err);
             }
         },
 
-        selectResource(resource) {
-            this.active_id = resource.id;
-            this.saveToStorage();
+        async selectResource(resource) {
+            this.active_key = resource.key;
+            await storage.setItem('activeKey', this.activeKey);
         }
     }
 });
