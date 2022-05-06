@@ -12,25 +12,30 @@ import {useEssayStore} from "./essay";
  * Handles the communication with the backend
  */
 export const useApiStore = defineStore('api', {
+
     state: () => {
         return {
-            initialized: false,
-            review: false,
-            showInitFailure: false,
-            showReplaceConfirmation: false,
-            showReloadConfirmation: false,
+            // saved in storage
+            backendUrl: '',                     // url to be used for REST calls
+            returnUrl: '',                      // url to be called when the wsriter is closed
+            userKey: '',                        // identifying key of the writing user
+            environmentKey: '',                 // identifying key of the writing envirnonment (defining the task)
+            authToken: '',                      // authentication token for REST calls
+            timeOffset: 0,                      // differnce between server time and client time (ms)
 
-            backendUrl: '',
-            returnUrl: '',
-            userKey: '',
-            environmentKey: '',
-            authToken: '',
-            timeOffset: 0
+            // not saved
+            initialized: false,                 // used to switch from startup screen to the editing view
+            review: false,                      // used to switch to the review and confirmation for a final submission
+            showInitFailure: false,             // show a message that the initialisation failed
+            showReplaceConfirmation: false,     // show a confirmation that the stored data should be replaced by another task or user
+            showReloadConfirmation: false,      // shw a confirmation that all data for the same task and user shod be reloaded from the server
         }
     },
 
     getters: {
-        // config for backend calls
+        /**
+         * Get the config object for REST requests
+         */
         requestConfig(state) {
 
             let baseURL = state.backendUrl;
@@ -56,7 +61,15 @@ export const useApiStore = defineStore('api', {
                 responseType: 'json',       // default
                 responseEncoding: 'utf8',   // default
             }
-        }
+        },
+
+        /**
+         * Get the server unix timestamp (s) corresponding to a client timestamp (ms)
+         */
+        serverTime(state) {
+            return (clientTime) => Math.floor((clientTime - state.timeOffset) / 1000);
+        },
+
     },
 
 
@@ -224,6 +237,31 @@ export const useApiStore = defineStore('api', {
             }
             try {
                 response = await axios.put( '/steps', data, this.requestConfig);
+                this.setTimeOffset(response);
+                this.refreshToken(response);
+                return true;
+            }
+            catch (error) {
+                console.error(error);
+                return false;
+            }
+        },
+
+
+        /**
+         * Save the writing steps to the backend
+         */
+        async sendStarted() {
+            const clientTime = Date.now();
+            const timeOffset = localStorage.getItem('timeOffset');
+
+            let response = {};
+            let data = {
+                started: Math.floor((clientTime - timeOffset) / 1000)
+            }
+            try {
+                response = await axios.put( '/start', data, this.requestConfig);
+                this.setTimeOffset(response);
                 this.refreshToken(response);
                 return true;
             }
@@ -259,18 +297,23 @@ export const useApiStore = defineStore('api', {
 
         /**
          * Set the offset between server time and client time
-         * (used to calculate the correct remaining time of the task)
+         * The offset is used to calculate the correct remaining time of the task
+         * The offset should be set from the response of a REST call
+         * when the response data transfer is short (no files)
          */
         setTimeOffset(response) {
-            const serverTime = response.headers['longessaytime'] * 1000;
-            const clientTime = Date.now();
+            const serverTimeMs = response.headers['longessaytime'] * 1000;
+            const clientTimeMs = Date.now();
 
-            this.timeOffset = clientTime - serverTime;
+            this.timeOffset = clientTimeMs - serverTimeMs;
             localStorage.setItem('timeOffset', this.timeOffset);
         },
 
         /**
          * Refresh the auth token with the value from the REST response
+         * Each REST call will generate a new auth token
+         * A token has only a certain valid time (e.g. one our)
+         * Within this time a new REST call must be made to get a new valid token
          */
         refreshToken(response) {
             this.authToken = response.headers['longessaytoken'];
