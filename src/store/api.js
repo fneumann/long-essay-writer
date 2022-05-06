@@ -168,7 +168,6 @@ export const useApiStore = defineStore('api', {
         },
 
 
-
         /**
          * Load all data from the backend
          */
@@ -198,6 +197,10 @@ export const useApiStore = defineStore('api', {
             const essayStore = useEssayStore();
             await essayStore.loadFromData(response.data.essay);
 
+            // send the time when the working on the task is started
+            if (!response.data.essay.started) {
+                await this.sendStart();
+            }
             this.initialized = true;
         },
 
@@ -228,6 +231,29 @@ export const useApiStore = defineStore('api', {
         },
 
         /**
+         * Send the time when the editing has started
+         */
+        async sendStart() {
+
+            let response = {};
+            let data = {
+                started: this.serverTime(Date.now())
+            }
+            try {
+                response = await axios.put( '/start', data, this.requestConfig);
+                this.setTimeOffset(response);
+                this.refreshToken(response);
+                return true;
+            }
+            catch (error) {
+                console.error(error);
+                this.showInitFailure = true;
+                return false;
+            }
+        },
+
+
+        /**
          * Save the writing steps to the backend
          */
         async saveWritingStepsToBackend(steps) {
@@ -247,29 +273,6 @@ export const useApiStore = defineStore('api', {
             }
         },
 
-
-        /**
-         * Save the writing steps to the backend
-         */
-        async sendStarted() {
-            const clientTime = Date.now();
-            const timeOffset = localStorage.getItem('timeOffset');
-
-            let response = {};
-            let data = {
-                started: Math.floor((clientTime - timeOffset) / 1000)
-            }
-            try {
-                response = await axios.put( '/start', data, this.requestConfig);
-                this.setTimeOffset(response);
-                this.refreshToken(response);
-                return true;
-            }
-            catch (error) {
-                console.error(error);
-                return false;
-            }
-        },
 
         /**
          * Configure the app
