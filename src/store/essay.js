@@ -19,17 +19,21 @@ const maxDistance = 1000;       // maximum cumulated levenshtein distance of pat
 
 
 const startState = {
-    currentContent: '',         // directly mapped to the editor, changes permanently
-    historyContent: '',         // full content corresponding to the last history entry (which may be delta)
+    
+    // saved in storage
+    storedContent: '',          // full content corresponding to the last stored writing step (which may be delta)
+    storedHash: '',             // hash of the full stored content
     history: [],                // list of save objects for the writing steps
-    sumOfDistances: 0,          // sum of levenshtine distances sice the last full save
-    lastFullIndex: -1,          // history index of the last full save (no delta)
     lastStoredIndex: -1,        // history index of the last save in the store
     lastSentIndex: -1,          // history index of the last sending to the backend
-    lastSentHash: '',           // hash of the last saving stored on the server
-    lastCheck: 0,               // timestamp of the last check if an update needs a saving
-    lastSave: 0,                // timestamp of the last save in the store
-    lastSending: 0,             // timestamp of the last sending to the backend
+    lastSentHash: '',           // hash of the full content of the last saving stored on the server
+
+    // not saved
+    currentContent: '',         // directly mapped to the tiny editor, changes permanently !!!
+    sumOfDistances: 0,          // sum of levenshtine distances sice the last full save
+    lastCheck: 0,               // timestamp (ms) of the last check if an update needs a saving
+    lastSave: 0,                // timestamp (ms) of the last save in the store
+    lastSending: 0,             // timestamp (ms) of the last sending to the backend
 }
 
 let lockUpdate = 0;             // prevent updates during a processing
@@ -50,16 +54,29 @@ export const useEssayStore = defineStore('essay',{
         historyLength: (state) => state.history.length,
         openSendings: (state) => state.lastStoredIndex - state.lastSentIndex,
 
+        /**
+         * Format a timestamp as string like '2022-02-21 21:22:22'
+         */
         formatTimestamp() {
             return (timestamp) => (new Date(timestamp)).toISOString().slice(0, 19).replace('T', ' ');
         },
+
+        /**
+         * Format an integer index with leading zeros like '000000001'
+         * Used to generate the history keys in the storage
+         */
         formatIndex() {
             return (index) => index.toString().padStart(9, '0');
         },
+
+        /**
+         * Make a hash from a string content and a unix timestamp
+         * This is used to sign the editing steps
+         * Content and timestamp are saved with a writing step, so verification on the server is possible
+         * The combination of content and timestamp makes a hash unique for the task and user
+         */
         makeHash() {
-            // hash should be unique, so add the timestamp as salt
-            // use only seconds, so that it cam be verified from data on server side
-            return (content, timestamp) => md5(content + Math.floor(timestamp / 1000));
+            return (content, timestamp) => md5(content + timestamp);
         }
     },
 
@@ -78,7 +95,6 @@ export const useEssayStore = defineStore('essay',{
             }
             else {
                 this.sumOfDistances = 0;
-                this.lastFullIndex = lastIndex;
             }
             return lastIndex
         },
@@ -92,11 +108,13 @@ export const useEssayStore = defineStore('essay',{
 
             try {
                 this.$state = startState;
-                this.currentContent = data.content;
-                this.historyContent = data.content;
+                this.currentContent = data.content ?? '';
+                this.storedContent = data.content ?? '';
+                this.storedHash = data.hash ?? '';
 
                 await storage.clear();
-                await storage.setItem('content', this.currentContent);
+                await storage.setItem('storedContent', this.storedContent);
+                await storage.setItem('storedHash', this.storedHash);
 
                 let index = 0;
                 while (index < data.steps.length) {
@@ -115,7 +133,7 @@ export const useEssayStore = defineStore('essay',{
 
                 this.lastStoredIndex = this.history.length -1;
                 this.lastSentIndex = this.history.length -1;
-                this.lastSentHash = data.hash;
+                this.lastSentHash =  this.storedHash;
                 await storage.setItem('lastStoredIndex', this.lastStoredIndex);
                 await storage.setItem('lastSentIndex', this.lastSentIndex);
                 await storage.setItem('lastSentHash',  this.lastSentHash);
@@ -141,8 +159,9 @@ export const useEssayStore = defineStore('essay',{
                 this.lastStoredIndex = await storage.getItem('lastStoredIndex') ?? -1;
                 this.lastSentIndex = await storage.getItem('lastSentIndex') ?? -1;
                 this.lastSentHash = await storage.getItem('lastSentHash') ?? '';
-                this.currentContent =  await storage.getItem('content') ?? '';
-                this.historyContent = this.currentContent;
+                this.storedContent =  await storage.getItem('storedContent') ?? '';
+                this.storedHash =  await storage.getItem('storedHash') ?? '';
+                this.currentContent = this.storedContent;
 
                 let index = 0;
                 while (index <= this.lastStoredIndex) {
@@ -173,6 +192,8 @@ export const useEssayStore = defineStore('essay',{
          */
         async updateContent(fromEditor = false) {
 
+            const apiStore = useApiStore();
+
             // avoid too many checks
             const currentTime = Date.now();
             if (currentTime - this.lastCheck < checkInterval) {
@@ -187,25 +208,23 @@ export const useEssayStore = defineStore('essay',{
             }
 
             try {
-                const currentContent = this.currentContent + '';   // ensure it is not changed because content is bound to tiny
-                const historyContent = this.historyContent + '';
+                const currentContent = this.currentContent + '';   // ensure it is not changed because content in state  is bound to tiny
                 let saveObject = null;
 
                 //
                 // create the save object if content has changed
                 //
-                if ((currentContent != historyContent)) {
-                    const currentHash = this.makeHash(currentContent, currentTime);
-                    const historyHash = this.makeHash(historyContent, this.lastSave);
+                if (currentContent != this.storedContent) {
+                    const currentHash = this.makeHash(currentContent, apiStore.serverTime(currentTime));
 
                     // check for change and calculate the patch
-                    let diffs = dmp.diff_main(historyContent, currentContent);
+                    let diffs = dmp.diff_main(this.storedContent, currentContent);
                     dmp.diff_cleanupEfficiency(diffs);
                     const distance = dmp.diff_levenshtein(diffs);
-                    const difftext = dmp.patch_toText(dmp.patch_make(historyContent, diffs));
+                    const difftext = dmp.patch_toText(dmp.patch_make(this.storedContent, diffs));
 
                     // be sure that the patch works
-                    const result = dmp.patch_apply(dmp.patch_fromText(difftext), historyContent);
+                    const result = dmp.patch_apply(dmp.patch_fromText(difftext), this.storedContent);
 
                     // make a full save if ...
                     if (this.history.length == 0                            // it is the first save
@@ -215,9 +234,9 @@ export const useEssayStore = defineStore('essay',{
                     ) {
                         saveObject = {
                             is_delta: 0,
-                            timestamp: Math.floor(currentTime / 1000),
+                            timestamp: apiStore.serverTime(currentTime),
                             content: currentContent,
-                            hash_before: historyHash,
+                            hash_before: this.storedHash,
                             hash_after: currentHash
                         }
                     }
@@ -227,9 +246,9 @@ export const useEssayStore = defineStore('essay',{
                     ) {
                         saveObject = {
                             is_delta: 1,
-                            timestamp: Math.floor(currentTime / 1000),
+                            timestamp: apiStore.serverTime(currentTime),
                             content: difftext,
-                            hash_before: historyHash,
+                            hash_before: this.storedHash,
                             hash_after: currentHash
                         }
                     }
@@ -242,11 +261,13 @@ export const useEssayStore = defineStore('essay',{
                         // push to history
                         this.lastStoredIndex = this.addToHistory(saveObject, distance);
                         this.lastSave = currentTime;
-                        this.historyContent = this.currentContent;
+                        this.storedContent = currentContent;
+                        this.storedHash = currentHash;
 
                         // save in storage
                         // 'content' in storage always corresponds to the the last history entry (which may be delta)
-                        await storage.setItem('content', currentContent);
+                        await storage.setItem('storedContent', this.storedContent);
+                        await storage.setItem('storedHash', this.storedHash);
                         await storage.setItem(this.formatIndex(this.lastStoredIndex), saveObject);
                         await storage.setItem('lastStoredIndex', this.lastStoredIndex);
 
@@ -298,7 +319,7 @@ export const useEssayStore = defineStore('essay',{
             while (index < this.history.length) {
                 steps.push(this.history[index])
                 sentHash = this.history[index].hash_after
-                sentIndex = index++;                        //post increment
+                sentIndex = index++;                        // post increment
             }
 
             if (steps.length > 0) {

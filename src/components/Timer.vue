@@ -10,15 +10,23 @@
   updateTimer();
 
   function updateTimer() {
+      if (taskStore.writingEndReached) {
+        remainingTime = 'Bearbeitung beendet';
+      }
       remainingTime.value = formatTimespan(taskStore.remainingTime());
   }
 
-  function formatTimespan(milliseconds)
+  /**
+   *
+   * @param int timespan  seconds
+   * @returns {string}
+   */
+  function formatTimespan(timespan)
   {
-    const seconds = ('00'+ (Math.floor(milliseconds / 1000) % 60)).slice(-2);
-    const minutes = ('00' + (Math.floor(milliseconds / 60000) % 60)).slice(-2);
-    const hours = ('00' + (Math.floor(milliseconds / 3600000)  % 24)).slice(-2);
-    const days = Math.floor(milliseconds / 86400000);
+    const seconds = ('00'+ (Math.floor(timespan) % 60)).slice(-2);
+    const minutes = ('00' + (Math.floor(timespan / 60) % 60)).slice(-2);
+    const hours = ('00' + (Math.floor(timespan / 3600)  % 24)).slice(-2);
+    const days = Math.floor(timespan / 86400);
 
     if (days > 1) {
       return days + ' Tage ' + hours + ' Stunden';
@@ -40,7 +48,6 @@
   setInterval(updateTimer, 1000)
 
 </script>
-
 
 
 <template>

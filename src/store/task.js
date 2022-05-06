@@ -9,7 +9,6 @@ const storage = localForage.createInstance({
 
 
 
-
 /**
  * Task Store
  * Handles settings of the writing task
@@ -17,20 +16,33 @@ const storage = localForage.createInstance({
 export const useTaskStore = defineStore('task',{
     state: () => {
         return {
-            title: null,
-            writer_name: null,
-            instructions: null,
-            writing_end: null
+            // saved in storage
+            title: null,            // title of the task - shown in the app bar
+            writer_name: null,      // name of the writer - shown in the app bar
+            instructions: null,     // instructions - shown in the left column
+            writing_end: null       // writung end (sec in server time) - accept no writing step after this time
         }
     },
 
     getters: {
         hasWritingEnd: (state) => !!state.writing_end,
-        writingEndReached: (state) => state.hasWritingEnd && state.remainingTime > 0,
+        writingEndReached: (state) => state.remainingTime === 0,
+
+        /**
+         * Remaining writing time in seconds
+         * After this time no writing step should be accepted anymore
+         * @return int|null
+         */
         remainingTime: function(state) {
             const apiStore = useApiStore();
+
             return function () {
-                return state.writing_end * 1000 + apiStore.timeOffset - Date.now()
+                if (state.writing_end) {
+                    return Math.max(0, state.writing_end - apiStore.serverTime(Date.now()));
+                }
+                else {
+                    return null;
+                }
             }
         },
     },

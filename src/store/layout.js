@@ -13,6 +13,7 @@ const storage = localForage.createInstance({
 export const useLayoutStore = defineStore('layout',{
     state: () => {
         return {
+            // saved in storage
             expandedColumn: 'left',         // left|right|none
             leftContent: 'instructions',    // instructions
             rightContent: 'essay',          // essay

@@ -12,6 +12,7 @@ const storage = localForage.createInstance({
 export const useResourcesStore = defineStore('resources',{
     state: () => {
         return {
+            // todo: saved in storage
             resources: [
                 {
                     id: 1,

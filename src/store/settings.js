@@ -13,10 +13,11 @@ const storage = localForage.createInstance({
 export const useSettingsStore = defineStore('settings',{
     state: () => {
         return {
-            headline_scheme: null,
-            formatting_options: null,
-            notice_boards: null,
-            copy_allowed: null
+            // saved in storage
+            headline_scheme: null,          // identifier (string) of the CSS scheme used for headlines
+            formatting_options: null,       // identifier (string) if the available formatting otions
+            notice_boards: null,            // number (int) of available notice boards
+            copy_allowed: null              // flag (bool) if copy/paste from other web sites should be allowed
         }
     },
 
