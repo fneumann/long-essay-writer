@@ -41,7 +41,10 @@ export const useResourcesStore = defineStore('resources',{
     actions: {
         async loadFromStorage() {
             try {
-                this.keys =  await storage.getItem('resourceKeys') ?? [];
+                const keys = await storage.getItem('resourceKeys');
+                if (keys) {
+                    this.keys =  JSON.parse(keys);
+                }
                 this.activeKey = await storage.getItem('activeKey') ?? [];
                 this.resources = [];
 
@@ -49,6 +52,7 @@ export const useResourcesStore = defineStore('resources',{
                 while (index < this.keys.length) {
                     let resource = await storage.getItem(this.keys[index]);
                     this.resources.push(resource);
+
                 }
 
             } catch (err) {
@@ -73,7 +77,7 @@ export const useResourcesStore = defineStore('resources',{
                     index++;
                 }
 
-                await storage.setItem('resourceKeys', this.keys);
+                await storage.setItem('resourceKeys', JSON.stringify(this.keys));
                 await storage.setItem('activeKey', this.activeKey);
             }
             catch (err) {

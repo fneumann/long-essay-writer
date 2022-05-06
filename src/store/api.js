@@ -36,40 +36,11 @@ export const useApiStore = defineStore('api', {
     getters: {
         /**
          * Get the config object for REST requests
+         * Provide the Date.now() as param
          */
         requestConfig(state) {
 
-            let baseURL = state.backendUrl;
-            let params = new URLSearchParams();
-
-            // cut query string and set it as params
-            // a REST path is added as url to the baseURL by axias calls
-            let position = baseURL.search(/\?+/);
-            if (position != -1) {
-                params = new URLSearchParams(baseURL.substr(position))
-                baseURL = baseURL.substr(0, position);
-            }
-
-            return {
-                baseURL: baseURL,
-                params: params,
-                headers: {
-                    'LongEssayUser': state.userKey,
-                    'LongEssayEnvironment': state.environmentKey,
-                    'LongEssayToken': state.authToken
-                },
-                timeout: 30000,             // milliseconds
-                responseType: 'json',       // default
-                responseEncoding: 'utf8',   // default
-            }
-        },
-
-        /**
-         * Get the Url for loading a file ressource
-         */
-        resourceUrl(state) {
-
-            return function (resourceKey) {
+            return function(time) {
                 let baseURL = state.backendUrl;
                 let params = new URLSearchParams();
 
@@ -81,12 +52,30 @@ export const useApiStore = defineStore('api', {
                     baseURL = baseURL.substr(0, position);
                 }
 
+                // add authentication info as url parameters
+                // use signature instead of token because it is visible
                 params.append('LongEssayUser', state.userKey);
                 params.append('LongEssayEnvironment', state.environmentKey);
-                params.append('LongEssaySignature', md5( state.userKey + state.environmentKey));
-                params.append('LongEssayResource', resourceKey);
+                params.append('LongEssayTime', this.serverTime(time));
+                params.append('LongEssaySignature', md5( state.userKey + state.environmentKey + state.authToken + this.serverTime(time)));
 
-                return baseURL + '/resource?' + params.toString();
+                return {
+                    baseURL: baseURL,
+                    params: params,
+                    timeout: 30000,             // milliseconds
+                    responseType: 'json',       // default
+                    responseEncoding: 'utf8',   // default
+                }
+            }
+        },
+
+        /**
+         * Get the Url for loading a file ressource
+         */
+        resourceUrl() {
+            return function (resourceKey) {
+                const config = this.requestConfig(Date.now());
+                return config.baseURL + '/file/' + resourceKey + '?' + config.params.toString();
             }
         },
 
@@ -205,7 +194,7 @@ export const useApiStore = defineStore('api', {
 
             let response = {};
             try {
-                response = await axios.get( '/data', this.requestConfig);
+                response = await axios.get( '/data', this.requestConfig(Date.now()));
                 this.setTimeOffset(response);
                 this.refreshToken(response);
             }
@@ -270,7 +259,7 @@ export const useApiStore = defineStore('api', {
                 started: this.serverTime(Date.now())
             }
             try {
-                response = await axios.put( '/start', data, this.requestConfig);
+                response = await axios.put( '/start', data, this.requestConfig(Date.now()));
                 this.setTimeOffset(response);
                 this.refreshToken(response);
                 return true;
@@ -292,7 +281,7 @@ export const useApiStore = defineStore('api', {
                 steps: steps
             }
             try {
-                response = await axios.put( '/steps', data, this.requestConfig);
+                response = await axios.put( '/steps', data, this.requestConfig(Date.now()));
                 this.setTimeOffset(response);
                 this.refreshToken(response);
                 return true;

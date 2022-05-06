@@ -14,7 +14,7 @@ function closeNavigation() {
 
 function selectResource(resource) {
   if (resource.type == 'url') {
-    window.open(resource.source, 'long-essay-rwriter-resource-' + resource.id)
+    window.open(resource.source, 'long-essay-writer-resource-' + resource.key)
   }
   else {
     resourcesStore.selectResource(resource);
@@ -59,7 +59,7 @@ function getResourceIcon(resource) {
                      @click="selectResource(resource); closeNavigation();"
                      :prepend-icon="getResourceIcon(resource)"
                      :title="resource.title"
-                     :key="resource.id">
+                     :key="resource.key">
         </v-list-item>
 
       </v-list-group>
