@@ -1,9 +1,7 @@
 <script setup>
   import {useResourcesStore} from '@/store/resources';
-  import {useApiStore} from '@/store/api';
 
   const resourcesStore = useResourcesStore();
-  const apiStore = useApiStore();
 
 </script>
 
@@ -17,7 +15,7 @@
        <object
            v-if="resource.mimetype =='application/pdf'"
            type="application/pdf"
-           :data="apiStore.resourceUrl(resource.key)"
+           :data="resource.url"
             width="100%"
             height="100%">
        </object>

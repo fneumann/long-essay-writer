@@ -36,36 +36,32 @@ export const useApiStore = defineStore('api', {
     getters: {
         /**
          * Get the config object for REST requests
-         * Provide the Date.now() as param
          */
         requestConfig(state) {
 
-            return function(time) {
-                let baseURL = state.backendUrl;
-                let params = new URLSearchParams();
+            let baseURL = state.backendUrl;
+            let params = new URLSearchParams();
 
-                // cut query string and set it as params
-                // a REST path is added as url to the baseURL by axias calls
-                let position = baseURL.search(/\?+/);
-                if (position != -1) {
-                    params = new URLSearchParams(baseURL.substr(position))
-                    baseURL = baseURL.substr(0, position);
-                }
+            // cut query string and set it as params
+            // a REST path is added as url to the baseURL by axias calls
+            let position = baseURL.search(/\?+/);
+            if (position != -1) {
+                params = new URLSearchParams(baseURL.substr(position))
+                baseURL = baseURL.substr(0, position);
+            }
 
-                // add authentication info as url parameters
-                // use signature instead of token because it is visible
-                params.append('LongEssayUser', state.userKey);
-                params.append('LongEssayEnvironment', state.environmentKey);
-                params.append('LongEssayTime', this.serverTime(time));
-                params.append('LongEssaySignature', md5( state.userKey + state.environmentKey + state.authToken + this.serverTime(time)));
+            // add authentication info as url parameters
+            // use signature instead of token because it is visible
+            params.append('LongEssayUser', state.userKey);
+            params.append('LongEssayEnvironment', state.environmentKey);
+            params.append('LongEssaySignature', md5( state.userKey + state.environmentKey + state.authToken));
 
-                return {
-                    baseURL: baseURL,
-                    params: params,
-                    timeout: 30000,             // milliseconds
-                    responseType: 'json',       // default
-                    responseEncoding: 'utf8',   // default
-                }
+            return {
+                baseURL: baseURL,
+                params: params,
+                timeout: 30000,             // milliseconds
+                responseType: 'json',       // default
+                responseEncoding: 'utf8',   // default
             }
         },
 
@@ -74,7 +70,7 @@ export const useApiStore = defineStore('api', {
          */
         resourceUrl() {
             return function (resourceKey) {
-                const config = this.requestConfig(Date.now());
+                const config = this.requestConfig;
                 return config.baseURL + '/file/' + resourceKey + '?' + config.params.toString();
             }
         },
@@ -194,7 +190,7 @@ export const useApiStore = defineStore('api', {
 
             let response = {};
             try {
-                response = await axios.get( '/data', this.requestConfig(Date.now()));
+                response = await axios.get( '/data', this.requestConfig);
                 this.setTimeOffset(response);
                 this.refreshToken(response);
             }
@@ -259,7 +255,7 @@ export const useApiStore = defineStore('api', {
                 started: this.serverTime(Date.now())
             }
             try {
-                response = await axios.put( '/start', data, this.requestConfig(Date.now()));
+                response = await axios.put( '/start', data, this.requestConfig);
                 this.setTimeOffset(response);
                 this.refreshToken(response);
                 return true;
@@ -281,7 +277,7 @@ export const useApiStore = defineStore('api', {
                 steps: steps
             }
             try {
-                response = await axios.put( '/steps', data, this.requestConfig(Date.now()));
+                response = await axios.put( '/steps', data, this.requestConfig);
                 this.setTimeOffset(response);
                 this.refreshToken(response);
                 return true;
