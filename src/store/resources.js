@@ -73,11 +73,6 @@ export const useResourcesStore = defineStore('resources',{
                 let index = 0;
                 while (index < data.length) {
                     let resource = data[index];
-
-                    // save a fixed url depending on the current authToken
-                    // this will prevent a reload of the resource file each time auth token changes
-                    // the resource file MUST be cached when it is loaded
-                    // because the url will get invalid with the next auth token change
                     resource.url = apiStore.resourceUrl(resource.key);
                     this.resources.push(resource);
                     this.keys.push(resource.key);

@@ -21,7 +21,8 @@ export const useApiStore = defineStore('api', {
             returnUrl: '',                      // url to be called when the wsriter is closed
             userKey: '',                        // identifying key of the writing user
             environmentKey: '',                 // identifying key of the writing envirnonment (defining the task)
-            authToken: '',                      // authentication token for REST calls
+            dataToken: '',                      // authentication token for transmission if data
+            fileToken: '',                      // authentication token for loading files
             timeOffset: 0,                      // differnce between server time and client time (ms)
 
             // not saved
@@ -39,30 +40,33 @@ export const useApiStore = defineStore('api', {
          */
         requestConfig(state) {
 
-            let baseURL = state.backendUrl;
-            let params = new URLSearchParams();
+            return function(token) {
+                let baseURL = state.backendUrl;
+                let params = new URLSearchParams();
 
-            // cut query string and set it as params
-            // a REST path is added as url to the baseURL by axias calls
-            let position = baseURL.search(/\?+/);
-            if (position != -1) {
-                params = new URLSearchParams(baseURL.substr(position))
-                baseURL = baseURL.substr(0, position);
+                // cut query string and set it as params
+                // a REST path is added as url to the baseURL by axias calls
+                let position = baseURL.search(/\?+/);
+                if (position != -1) {
+                    params = new URLSearchParams(baseURL.substr(position))
+                    baseURL = baseURL.substr(0, position);
+                }
+
+                // add authentication info as url parameters
+                // use signature instead of token because it is visible
+                params.append('LongEssayUser', state.userKey);
+                params.append('LongEssayEnvironment', state.environmentKey);
+                params.append('LongEssaySignature', md5( state.userKey + state.environmentKey + token));
+
+                return {
+                    baseURL: baseURL,
+                    params: params,
+                    timeout: 30000,             // milliseconds
+                    responseType: 'json',       // default
+                    responseEncoding: 'utf8',   // default
+                }
             }
 
-            // add authentication info as url parameters
-            // use signature instead of token because it is visible
-            params.append('LongEssayUser', state.userKey);
-            params.append('LongEssayEnvironment', state.environmentKey);
-            params.append('LongEssaySignature', md5( state.userKey + state.environmentKey + state.authToken));
-
-            return {
-                baseURL: baseURL,
-                params: params,
-                timeout: 30000,             // milliseconds
-                responseType: 'json',       // default
-                responseEncoding: 'utf8',   // default
-            }
         },
 
         /**
@@ -70,7 +74,7 @@ export const useApiStore = defineStore('api', {
          */
         resourceUrl() {
             return function (resourceKey) {
-                const config = this.requestConfig;
+                const config = this.requestConfig(this.fileToken);
                 return config.baseURL + '/file/' + resourceKey + '?' + config.params.toString();
             }
         },
@@ -102,7 +106,8 @@ export const useApiStore = defineStore('api', {
             this.returnUrl = localStorage.getItem('returnUrl');
             this.userKey = localStorage.getItem('userKey');
             this.environmentKey = localStorage.getItem('environmentKey');
-            this.authToken = localStorage.getItem('authToken');
+            this.dataToken = localStorage.getItem('dataToken');
+            this.fileToken = localStorage.getItem('dataToken');
             this.timeOffset = Math.floor(localStorage.getItem('timeOffset') ?? 0);
 
             // check if context given by cookies differs and force a reload if neccessary
@@ -122,11 +127,11 @@ export const useApiStore = defineStore('api', {
             if (!!Cookies.get('LongEssayReturn') && Cookies.get('LongEssayReturn') !== this.returnUrl) {
                 this.returnUrl = Cookies.get('LongEssayReturn');
             }
-            if (!!Cookies.get('LongEssayToken') && Cookies.get('LongEssayToken') !== this.authToken) {
-                this.authToken = Cookies.get('LongEssayToken');
+            if (!!Cookies.get('LongEssayToken') && Cookies.get('LongEssayToken') !== this.dataToken) {
+                this.dataToken = Cookies.get('LongEssayToken');
             }
 
-            if (!this.backendUrl || !this.returnUrl || !this.userKey || !this.environmentKey || !this.authToken)
+            if (!this.backendUrl || !this.returnUrl || !this.userKey || !this.environmentKey || !this.dataToken)
             {
                 this.showInitFailure = true;
                 return;
@@ -190,7 +195,7 @@ export const useApiStore = defineStore('api', {
 
             let response = {};
             try {
-                response = await axios.get( '/data', this.requestConfig);
+                response = await axios.get( '/data', this.requestConfig(this.dataToken));
                 this.setTimeOffset(response);
                 this.refreshToken(response);
             }
@@ -255,7 +260,7 @@ export const useApiStore = defineStore('api', {
                 started: this.serverTime(Date.now())
             }
             try {
-                response = await axios.put( '/start', data, this.requestConfig);
+                response = await axios.put( '/start', data, this.requestConfig(this.dataToken));
                 this.setTimeOffset(response);
                 this.refreshToken(response);
                 return true;
@@ -277,7 +282,7 @@ export const useApiStore = defineStore('api', {
                 steps: steps
             }
             try {
-                response = await axios.put( '/steps', data, this.requestConfig);
+                response = await axios.put( '/steps', data, this.requestConfig(this.dataToken));
                 this.setTimeOffset(response);
                 this.refreshToken(response);
                 return true;
@@ -309,7 +314,8 @@ export const useApiStore = defineStore('api', {
             localStorage.setItem('returnUrl', this.returnUrl);
             localStorage.setItem('userKey', this.userKey);
             localStorage.setItem('environmentKey', this.environmentKey);
-            localStorage.setItem('authToken', this.authToken);
+            localStorage.setItem('dataToken', this.dataToken);
+            localStorage.setItem('fileToken', this.fileToken);
         },
 
 
@@ -334,8 +340,15 @@ export const useApiStore = defineStore('api', {
          * Within this time a new REST call must be made to get a new valid token
          */
         refreshToken(response) {
-            this.authToken = response.headers['longessaytoken'];
-            localStorage.setItem('authToken', this.authToken);
+            if (response.headers['longessaydatatoken']) {
+                this.dataToken = response.headers['longessaydatatoken'];
+                localStorage.setItem('dataToken', this.dataToken);
+            }
+
+            if (response.headers['longessayfiletoken']) {
+                this.fileToken = response.headers['longessayfiletoken'];
+                localStorage.setItem('fileToken', this.fileToken);
+            }
         },
 
     }
