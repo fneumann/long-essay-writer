@@ -29,8 +29,8 @@ const taskStore = useTaskStore();
         </div>
 
         <div class="col-footer text-right bg-grey-lighten-4" >
-          <v-btn color="green" class="ma-2" :href="apiStore.returnUrl">
-            <v-icon icon="mdi-file-send"></v-icon>
+          <v-btn color="secondary" class="ma-2" :href="apiStore.returnUrl">
+            <v-icon icon="mdi-file-send-outline"></v-icon>
             <span>Zur Bewertung abgeben</span>
           </v-btn>
           <v-btn class="ma-2" :href="apiStore.returnUrl" v-show="taskStore.writingEndReached">

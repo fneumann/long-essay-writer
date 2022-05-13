@@ -20,31 +20,16 @@ export const useTaskStore = defineStore('task',{
             title: null,            // title of the task - shown in the app bar
             writer_name: null,      // name of the writer - shown in the app bar
             instructions: null,     // instructions - shown in the left column
-            writing_end: null       // writung end (sec in server time) - accept no writing step after this time
+            writing_end: null,      // writung end (sec in server time) - accept no writing step after this time
+
+            // not saved in storage
+            remaining_time: null     // remaining writing time in seconds (updated per interval)
         }
     },
 
     getters: {
         hasWritingEnd: (state) => !!state.writing_end,
-        writingEndReached: (state) => state.remainingTime() === 0,
-
-        /**
-         * Remaining writing time in seconds
-         * After this time no writing step should be accepted anymore
-         * @return int|null
-         */
-        remainingTime: function(state) {
-            const apiStore = useApiStore();
-
-            return function () {
-                if (state.writing_end) {
-                    return Math.max(0, state.writing_end - apiStore.serverTime(Date.now()));
-                }
-                else {
-                    return null;
-                }
-            }
-        },
+        writingEndReached: (state) => state.remaining_time === 0,
     },
 
     actions: {
@@ -62,6 +47,9 @@ export const useTaskStore = defineStore('task',{
             } catch (err) {
                 console.log(err);
             }
+
+            this.updateRemainingTime();
+            setInterval(this.updateRemainingTime, 1000);
         },
 
         async loadFromData(data) {
@@ -70,6 +58,27 @@ export const useTaskStore = defineStore('task',{
                 this.setData(data);
             } catch (err) {
                 console.log(err);
+            }
+
+            this.updateRemainingTime();
+            setInterval(this.updateRemainingTime, 1000);
+        },
+
+        /**
+         * Update the remaining writing time (called by interval)
+         */
+        updateRemainingTime() {
+            const apiStore = useApiStore();
+
+            if (this.writing_end) {
+                this.remaining_time = Math.max(0, this.writing_end - apiStore.serverTime(Date.now()));
+            }
+            else {
+                this.remaining_time = null;
+            }
+
+            if (this.writingEndReached) {
+                apiStore.review = true;
             }
         }
     }

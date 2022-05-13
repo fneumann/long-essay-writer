@@ -15,7 +15,7 @@ export const useLayoutStore = defineStore('layout',{
         return {
             // saved in storage
             expandedColumn: 'left',         // left|right|none
-            leftContent: 'instructions',    // instructions
+            leftContent: 'instructions',    // instructions|resources
             rightContent: 'essay',          // essay
             showTimer: true
         }
@@ -44,7 +44,9 @@ export const useLayoutStore = defineStore('layout',{
                 const data = await storage.getItem('layout');
 
                 this.expandedColumn = data.expandedColumn;
-                this.leftContent = data.leftContent;
+                // resources may not be ready PDF is not shown instantly
+                // so show show the instructions as default left content
+                // this.leftContent = data.leftContent;
                 this.rightContent = data.rightContent;
                 this.showTimer = data.showTimer;
 

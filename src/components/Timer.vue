@@ -1,26 +1,9 @@
 <script setup>
   import {useTaskStore} from "../store/task";
   import {useLayoutStore} from "../store/layout";
-  import { ref } from 'vue';
 
   const taskStore = useTaskStore();
   const layoutStore = useLayoutStore();
-
-  let remainingTime = ref('');
-  let showClock = ref(true);
-
-  updateTimer();
-
-  function updateTimer() {
-      if (taskStore.writingEndReached) {
-        remainingTime.value = 'Bearbeitung beendet';
-        showClock.value = false;
-      }
-      else {
-        remainingTime.value = formatTimespan(taskStore.remainingTime());
-        showClock.value = true;
-      }
-  }
 
   /**
    *
@@ -41,25 +24,23 @@
       return days + ' Tag ' + hours + ' Stunden';
     }
     else if (hours != '00') {
-      return hours + ':' + minutes + ' Stunden';
+      return hours + ':' + minutes + ':' + seconds + ' Stunden'; // todo: don't show seconds
     }
     else if (minutes != '00') {
-      return minutes + ':' + seconds + ' Minuten';  // todo: son't show seconds
+      return minutes + ':' + seconds + ' Minuten';              // todo: don't show seconds
     }
     else  {
       return seconds + ' Sekunden';
     }
   }
 
-  setInterval(updateTimer, 1000)
-
 </script>
 
 
 <template>
-  <v-btn @click="layoutStore.toggleTimer()" v-show="showClock">
+  <v-btn @click="layoutStore.toggleTimer()" v-show="!taskStore.writingEndReached">
     <v-icon left icon="mdi-clock-outline"></v-icon>
-    <span v-show=layoutStore.showTimer>{{ remainingTime }}</span>
+    <span v-show=layoutStore.showTimer>{{ formatTimespan(taskStore.remaining_time) }}</span>
   </v-btn>
 </template>
 
