@@ -39,16 +39,28 @@ export const useLayoutStore = defineStore('layout',{
 
     actions: {
 
+        async clearStorage() {
+            try {
+                await storage.clear();
+            }
+            catch (err) {
+                console.log(err);
+            }
+        },
+
+
         async loadFromStorage() {
             try {
                 const data = await storage.getItem('layout');
 
-                this.expandedColumn = data.expandedColumn;
-                // resources may not be ready PDF is not shown instantly
-                // so show show the instructions as default left content
-                // this.leftContent = data.leftContent;
-                this.rightContent = data.rightContent;
-                this.showTimer = data.showTimer;
+                if (data) {
+                    this.expandedColumn = data.expandedColumn;
+                    // resources may not be ready PDF is not shown instantly
+                    // so show show the instructions as default left content
+                    // this.leftContent = data.leftContent;
+                    this.rightContent = data.rightContent;
+                    this.showTimer = data.showTimer;
+                }
 
             } catch (err) {
                 console.log(err);

@@ -29,6 +29,16 @@ export const useSettingsStore = defineStore('settings',{
             this.copy_allowed = data.copy_allowed;
         },
 
+        async clearStorage() {
+            try {
+                await storage.clear();
+            }
+            catch (err) {
+                console.log(err);
+            }
+        },
+
+
         async loadFromStorage() {
             try {
                 const data = await storage.getItem('settings');

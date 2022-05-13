@@ -25,15 +25,15 @@ const taskStore = useTaskStore();
         </div>
 
         <div class="col-content">
-          <div class="review-text" v-html="essayStore.currentContent"></div>
+          <div class="review-text" v-html="essayStore.storedContent"></div>
         </div>
 
         <div class="col-footer text-right bg-grey-lighten-4" >
-          <v-btn color="secondary" class="ma-2" :href="apiStore.returnUrl">
+          <v-btn class="ma-2" @click="apiStore.finalize(true)" color="secondary" >
             <v-icon icon="mdi-file-send-outline"></v-icon>
             <span>Zur Bewertung abgeben</span>
           </v-btn>
-          <v-btn class="ma-2" :href="apiStore.returnUrl" v-show="taskStore.writingEndReached">
+          <v-btn class="ma-2" @click="apiStore.finalize(false)" v-show="taskStore.writingEndReached">
             <v-icon icon="mdi-logout-variant"></v-icon>
             <span>Ohne Abgabe beenden</span>
           </v-btn>
@@ -44,6 +44,28 @@ const taskStore = useTaskStore();
         </div>
       </div>
     </div>
+
+    <v-dialog persistent v-model="apiStore.showFinalizeFailure">
+      <v-card>
+        <v-card-text>
+          <p v-show="apiStore.showAuthorizeFailure">Beim Speichern der Abgabe ist ein Fehler aufgetreten.
+            Bitte versuchen Sie es später noch einmal.</p>
+          <p v-show="!apiStore.showFinalizeFailure">Beim Speichern Ihrer letzten Änderungen ist ein Fehler aufgetreten.
+            Bitte versuchen Sie es später noch einmal.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn @click="apiStore.showFinalizeFailure=false">
+            <v-icon left icon="mdi-close"></v-icon>
+            <span>Später versuchen</span>
+          </v-btn>
+          <v-btn :href="apiStore.returnUrl">
+            <v-icon left icon="mdi-logout-variant"></v-icon>
+            <span>Ohne Speichern beenden</span>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </v-main>
 </template>
 

@@ -40,6 +40,15 @@ export const useTaskStore = defineStore('task',{
             this.writing_end = data.writing_end;
         },
 
+        async clearStorage() {
+            try {
+                await storage.clear();
+            }
+            catch (err) {
+                console.log(err);
+            }
+        },
+
         async loadFromStorage() {
             try {
                 const data = await storage.getItem('task');

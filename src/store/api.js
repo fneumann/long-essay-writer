@@ -30,7 +30,10 @@ export const useApiStore = defineStore('api', {
             review: false,                      // used to switch to the review and confirmation for a final submission
             showInitFailure: false,             // show a message that the initialisation failed
             showReplaceConfirmation: false,     // show a confirmation that the stored data should be replaced by another task or user
-            showReloadConfirmation: false,      // shw a confirmation that all data for the same task and user shod be reloaded from the server
+            showReloadConfirmation: false,      // show a confirmation that all data for the same task and user shod be reloaded from the server
+            showAuthorizeFailure: false,        // show a confirmation the sending of the final authorization failed
+            showFinalizeFailure: false,         // show a failure message for the final saving
+            showAuthorizeFailure: false,        // show a failure message for the final authorization
         }
     },
 
@@ -184,6 +187,29 @@ export const useApiStore = defineStore('api', {
             }
         },
 
+        /**
+         * Load all data from the storage
+         */
+        async loadDataFromStorage() {
+
+            console.log("loadDataFromStorage...");
+            this.updateConfig();
+
+            const settingsStore = useSettingsStore();
+            const taskStore = useTaskStore();
+            const resourcesStore = useResourcesStore();
+            const essayStore = useEssayStore();
+            const layoutStore = useLayoutStore();
+
+            await settingsStore.loadFromStorage();
+            await taskStore.loadFromStorage();
+            await resourcesStore.loadFromStorage();
+            await essayStore.loadFromStorage();
+            await layoutStore.loadFromStorage();
+
+            this.initialized = true;
+        },
+
 
         /**
          * Load all data from the backend
@@ -206,15 +232,13 @@ export const useApiStore = defineStore('api', {
             }
 
             const settingsStore = useSettingsStore();
-            await settingsStore.loadFromData(response.data.settings);
-
             const taskStore = useTaskStore();
-            await taskStore.loadFromData(response.data.task);
-
             const resourcesStore = useResourcesStore();
-            await resourcesStore.loadFromData(response.data.resources);
-
             const essayStore = useEssayStore();
+
+            await settingsStore.loadFromData(response.data.settings);
+            await taskStore.loadFromData(response.data.task);
+            await resourcesStore.loadFromData(response.data.resources);
             await essayStore.loadFromData(response.data.essay);
 
             // send the time when the working on the task is started
@@ -224,31 +248,6 @@ export const useApiStore = defineStore('api', {
             this.initialized = true;
         },
 
-        /**
-         * Load all data from the storage
-         */
-        async loadDataFromStorage() {
-
-            console.log("loadDataFromStorage...");
-            this.updateConfig();
-
-            const settings = useSettingsStore();
-            await settings.loadFromStorage();
-
-            const taskStore = useTaskStore();
-            await taskStore.loadFromStorage();
-
-            const resourcesStore = useResourcesStore();
-            await resourcesStore.loadFromStorage();
-
-            const essayStore = useEssayStore();
-            await essayStore.loadFromStorage();
-
-            const layoutStore = useLayoutStore();
-            await layoutStore.loadFromStorage();
-
-            this.initialized = true;
-        },
 
         /**
          * Send the time when the editing has started
@@ -295,7 +294,30 @@ export const useApiStore = defineStore('api', {
 
 
         /**
-         * Configure the app
+         * Save the final authorization to the backend
+         */
+        async saveFinalContentToBackend(steps, content, hash, authorized) {
+            let response = {};
+            let data = {
+                steps: steps,
+                content: content,
+                hash: hash,
+                authorized: authorized
+            }
+            try {
+                response = await axios.put( '/final', data, this.requestConfig(this.dataToken));
+                this.refreshToken(response);
+                return true;
+            }
+            catch (error) {
+                console.error(error);
+                return false;
+            }
+        },
+
+
+        /**
+         * Update the app configuration
          * This is called when the initialisation can be done silently
          * Or when a confirmation dialog is confirmed
          */
@@ -351,5 +373,38 @@ export const useApiStore = defineStore('api', {
             }
         },
 
+        /**
+         * Finalize the writing
+         */
+        async finalize(authorize) {
+
+            const settingsStore = useSettingsStore();
+            const taskStore = useTaskStore();
+            const resourcesStore = useResourcesStore();
+            const essayStore = useEssayStore();
+            const layoutStore = useLayoutStore();
+
+            if (authorize || essayStore.openSendings > 0) {
+                if (!await this.saveFinalContentToBackend (
+                    essayStore.unsentHistory,
+                    essayStore.storedContent,
+                    essayStore.storedHash,
+                    authorize,
+                )) {
+                    this.showFinalizeFailure = true
+                    this.showAuthorizeFailure = authorize
+                    return;
+                }
+            }
+
+            await settingsStore.clearStorage();
+            await taskStore.clearStorage();
+            await resourcesStore.clearStorage();
+            await essayStore.clearStorage();
+            await layoutStore.clearStorage();
+            localStorage.clear();
+
+            window.location = this.returnUrl;
+        }
     }
 })

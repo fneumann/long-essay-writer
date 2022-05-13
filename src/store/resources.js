@@ -40,6 +40,16 @@ export const useResourcesStore = defineStore('resources',{
     },
 
     actions: {
+
+         async clearStorage() {
+            try {
+                await storage.clear();
+            }
+            catch (err) {
+                console.log(err);
+            }
+        },
+
         async loadFromStorage() {
             try {
                 const keys = await storage.getItem('resourceKeys');

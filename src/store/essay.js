@@ -3,6 +3,7 @@ import localForage from "localforage";
 import DiffMatchPatch from 'diff-match-patch';
 import md5 from 'md5';
 import {useApiStore} from "./api";
+import {useTaskStore} from "./task";
 
 const storage = localForage.createInstance({
     storeName: "essay",
@@ -54,6 +55,17 @@ export const useEssayStore = defineStore('essay',{
         historyLength: (state) => state.history.length,
         openSendings: (state) => state.lastStoredIndex - state.lastSentIndex,
 
+        unsentHistory(state) {
+            let steps = [];
+            let index = state.lastSentIndex + 1;
+            while (index < state.history.length) {
+                steps.push(state.history[index])
+                index++;
+            }
+            return steps
+        },
+
+
         /**
          * Format a timestamp as string like '2022-02-21 21:22:22'
          */
@@ -81,6 +93,15 @@ export const useEssayStore = defineStore('essay',{
     },
 
     actions: {
+
+        async clearStorage() {
+            try {
+                await storage.clear();
+            }
+            catch (err) {
+                console.log(err);
+            }
+        },
 
         /**
          * Push a save object to the history in the state
@@ -204,6 +225,12 @@ export const useEssayStore = defineStore('essay',{
             // no need to wait because updateContent is called by interval
             // use post-increment for test-and set
             if (lockUpdate++) {
+                return;
+            }
+
+            // don't accept changes after writing end
+            const taskStore = useTaskStore();
+            if (taskStore.writingEndReached) {
                 return;
             }
 
