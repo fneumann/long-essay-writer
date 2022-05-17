@@ -31,7 +31,6 @@ export const useApiStore = defineStore('api', {
             showInitFailure: false,             // show a message that the initialisation failed
             showReplaceConfirmation: false,     // show a confirmation that the stored data should be replaced by another task or user
             showReloadConfirmation: false,      // show a confirmation that all data for the same task and user shod be reloaded from the server
-            showAuthorizeFailure: false,        // show a confirmation the sending of the final authorization failed
             showFinalizeFailure: false,         // show a failure message for the final saving
             showAuthorizeFailure: false,        // show a failure message for the final authorization
         }
