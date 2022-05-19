@@ -85,7 +85,7 @@ export const useApiStore = defineStore('api', {
          * Get the server unix timestamp (s) corresponding to a client timestamp (ms)
          */
         serverTime(state) {
-            return (clientTime) => Math.floor((clientTime - state.timeOffset) / 1000);
+            return (clientTime) => clientTime == 0 ? 0 : Math.floor((clientTime - state.timeOffset) / 1000);
         },
 
     },
