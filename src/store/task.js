@@ -3,7 +3,7 @@ import localForage from "localforage";
 import {useApiStore} from "./api";
 
 const storage = localForage.createInstance({
-    storeName: "task",
+    storeName: "writer-task",
     description: "Task data",
 });
 

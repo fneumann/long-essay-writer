@@ -6,7 +6,7 @@ import {useApiStore} from "./api";
 import {useTaskStore} from "./task";
 
 const storage = localForage.createInstance({
-    storeName: "essay",
+    storeName: "writer-essay",
     description: "Essay data",
 });
 

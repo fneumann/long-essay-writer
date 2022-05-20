@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import localForage from "localforage";
 
 const storage = localForage.createInstance({
-    storeName: "settings",
+    storeName: "writer-settings",
     description: "Settings data",
 });
 

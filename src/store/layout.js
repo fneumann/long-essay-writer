@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import localForage from "localforage";
 const storage = localForage.createInstance({
-    storeName: "layout",
+    storeName: "writer-layout",
     description: "Layout data",
 });
 

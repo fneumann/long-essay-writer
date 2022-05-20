@@ -104,13 +104,13 @@ export const useApiStore = defineStore('api', {
             let lastHash = Cookies.get('LongEssayHash');
 
             // take values formerly stored
-            this.backendUrl = localStorage.getItem('backendUrl');
-            this.returnUrl = localStorage.getItem('returnUrl');
-            this.userKey = localStorage.getItem('userKey');
-            this.environmentKey = localStorage.getItem('environmentKey');
-            this.dataToken = localStorage.getItem('dataToken');
-            this.fileToken = localStorage.getItem('dataToken');
-            this.timeOffset = Math.floor(localStorage.getItem('timeOffset') ?? 0);
+            this.backendUrl = localStorage.getItem('writerBackendUrl');
+            this.returnUrl = localStorage.getItem('writerReturnUrl');
+            this.userKey = localStorage.getItem('writerUserKey');
+            this.environmentKey = localStorage.getItem('writerEnvironmentKey');
+            this.dataToken = localStorage.getItem('writerDataToken');
+            this.fileToken = localStorage.getItem('writerFileToken');
+            this.timeOffset = Math.floor(localStorage.getItem('writerTimeOffset') ?? 0);
 
             // check if context given by cookies differs and force a reload if neccessary
             if (!!Cookies.get('LongEssayUser') && Cookies.get('LongEssayUser') !== this.userKey) {
@@ -331,12 +331,12 @@ export const useApiStore = defineStore('api', {
             Cookies.remove('LongEssayToken');
             Cookies.remove('LongEssayHash');
 
-            localStorage.setItem('backendUrl', this.backendUrl);
-            localStorage.setItem('returnUrl', this.returnUrl);
-            localStorage.setItem('userKey', this.userKey);
-            localStorage.setItem('environmentKey', this.environmentKey);
-            localStorage.setItem('dataToken', this.dataToken);
-            localStorage.setItem('fileToken', this.fileToken);
+            localStorage.setItem('writerBackendUrl', this.backendUrl);
+            localStorage.setItem('writerReturnUrl', this.returnUrl);
+            localStorage.setItem('writerUserKey', this.userKey);
+            localStorage.setItem('writerEnvironmentKey', this.environmentKey);
+            localStorage.setItem('writerDataToken', this.dataToken);
+            localStorage.setItem('writerFileToken', this.fileToken);
         },
 
 
@@ -351,7 +351,7 @@ export const useApiStore = defineStore('api', {
             const clientTimeMs = Date.now();
 
             this.timeOffset = clientTimeMs - serverTimeMs;
-            localStorage.setItem('timeOffset', this.timeOffset);
+            localStorage.setItem('writerTimeOffset', this.timeOffset);
         },
 
         /**
@@ -363,12 +363,12 @@ export const useApiStore = defineStore('api', {
         refreshToken(response) {
             if (response.headers['longessaydatatoken']) {
                 this.dataToken = response.headers['longessaydatatoken'];
-                localStorage.setItem('dataToken', this.dataToken);
+                localStorage.setItem('writerDataToken', this.dataToken);
             }
 
             if (response.headers['longessayfiletoken']) {
                 this.fileToken = response.headers['longessayfiletoken'];
-                localStorage.setItem('fileToken', this.fileToken);
+                localStorage.setItem('writerFileToken', this.fileToken);
             }
         },
 
