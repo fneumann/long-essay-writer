@@ -6,6 +6,7 @@ import {useTaskStore} from "./task";
 import {useLayoutStore} from "./layout";
 import {useResourcesStore} from "./resources";
 import {useEssayStore} from "./essay";
+import {useAlertStore} from "./alerts";
 import md5 from 'md5';
 
 /**
@@ -184,6 +185,8 @@ export const useApiStore = defineStore('api', {
                     await this.loadDataFromBackend();
                 }
             }
+
+            setInterval(this.checkUpdate, 5000);
         },
 
         /**
@@ -247,6 +250,31 @@ export const useApiStore = defineStore('api', {
             this.initialized = true;
         },
 
+        /**
+         * Check for updates from the backend
+         * - new writing end
+         * - messages
+         */
+        async checkUpdate() {
+
+            let response = {};
+            try {
+                response = await axios.get( '/update', this.requestConfig(this.dataToken));
+                this.setTimeOffset(response);
+                this.refreshToken(response);
+            }
+            catch (error) {
+                console.error(error);
+                return false;
+            }
+
+            const taskStore = useTaskStore();
+            await taskStore.loadFromData(response.data.task);
+
+            const alertStore = useAlertStore();
+            await alertStore.loadFromData(response.data.alerts);
+
+        },
 
         /**
          * Send the time when the editing has started
