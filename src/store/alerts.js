@@ -13,19 +13,21 @@ export const useAlertStore = defineStore('alerts',{
     state: () => {
         return {
             // saved in storage
-            keys: [],               // list of string keys
-            alerts: [],             // list of alert objects
-            activeKey: ''           // key of the active alert
+            keys: [],                   // list of string keys
+            alerts: [],                 // list of alert objects
+            activeKey: '',              // key of the active alert
+            showAllAlerts: false
         }
     },
 
 
     getters: {
+        countAlerts: (state) => state.alerts.length,
         hasAlerts: (state) => state.alerts.length > 0,
+        hasActiveAlert : (state) => state.activeKey != '',
 
         activeMessage(state) {
           const alert = state.alerts.find(element => element.key == state.activeKey);
-
           return alert ? alert.message : ""
         },
 
@@ -33,12 +35,25 @@ export const useAlertStore = defineStore('alerts',{
             return (key) => state.alerts.find(element => element.key == key)
         },
 
-        isActive(state) {
-            return (alert) => state.activeKey == alert.key
-        }
+        /**
+         * Format a timestamp as string like '2022-02-21 21:22'
+         */
+        formatTimestamp() {
+            return (timestamp) => (new Date(timestamp * 1000)).toLocaleString();
+        },
     },
 
     actions: {
+
+        showAlerts() {
+            this.showAllAlerts = true;
+        },
+
+        hideAlert() {
+            this.activeKey = '';
+            this.showAllAlerts = false;
+        },
+
 
          async clearStorage() {
             try {

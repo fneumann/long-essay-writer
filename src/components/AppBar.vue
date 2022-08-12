@@ -4,10 +4,15 @@
  * AApplication bar
  */
 import Timer from "@/components/Timer.vue";
+import Alerts from "@/components/Alerts.vue";
+
 import {useApiStore} from '@/store/api';
 import {useTaskStore} from "../store/task";
+import {useAlertStore} from '@/store/alerts';
+
 const apiStore = useApiStore();
 const taskStore = useTaskStore();
+const alertStore = useAlertStore();
 
 function getTitle() {
   return (taskStore.writer_name == null ? '' : taskStore.writer_name + ', ') + (taskStore.title ?? '');
@@ -25,6 +30,8 @@ function getTitle() {
       <span>0 Mitteilungen</span>
     </v-btn>
 -->
+
+    <alerts v-if="alertStore.hasAlerts"></alerts>
     <timer v-if="taskStore.hasWritingEnd"></timer>
 
     <v-btn v-show="!apiStore.review">
