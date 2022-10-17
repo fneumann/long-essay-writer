@@ -2,10 +2,11 @@
 import {useApiStore} from '@/store/api';
 import {useTaskStore} from '@/store/task';
 import {useEssayStore} from '@/store/essay';
+import {useSettingsStore} from '@/store/settings';
 const apiStore = useApiStore();
 const essayStore = useEssayStore();
 const taskStore = useTaskStore();
-
+const settingsStore = useSettingsStore();
 
 </script>
 
@@ -29,9 +30,9 @@ const taskStore = useTaskStore();
         </div>
 
         <div class="col-footer text-right bg-grey-lighten-4" >
-          <v-btn class="ma-2" @click="apiStore.finalize(true)" color="secondary" >
-            <v-icon icon="mdi-file-send-outline"></v-icon>
-            <span>Zur Bewertung abgeben</span>
+          <v-btn class="ma-2" @click="apiStore.finalize(true)" :color="settingsStore.primaryColorCss" >
+            <v-icon :color="settingsStore.primaryTextColorCss" icon="mdi-file-send-outline"></v-icon>
+            <span :style="settingsStore.primaryTextColorFullCss">Zur Bewertung abgeben</span>
           </v-btn>
           <v-btn class="ma-2" @click="apiStore.finalize(false)" v-show="taskStore.writingEndReached">
             <v-icon icon="mdi-logout-variant"></v-icon>

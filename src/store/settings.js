@@ -17,7 +17,32 @@ export const useSettingsStore = defineStore('settings',{
             headline_scheme: null,          // identifier (string) of the CSS scheme used for headlines
             formatting_options: null,       // identifier (string) if the available formatting otions
             notice_boards: null,            // number (int) of available notice boards
-            copy_allowed: null              // flag (bool) if copy/paste from other web sites should be allowed
+            copy_allowed: null,             // flag (bool) if copy/paste from other web sites should be allowed
+            primary_color: null,            // color for the background of primary actions
+            primary_text_color: null,       // color for the text of primary actions
+        }
+    },
+
+    getters: {
+        primaryColorCss: (state) => {
+            if (state.primary_color) {
+                return '#' + state.primary_color
+            }
+            return '';
+        },
+
+        primaryTextColorCss: (state) => {
+            if (state.primary_text_color) {
+                return '#' + state.primary_text_color
+            }
+            return '';
+        },
+
+        primaryTextColorFullCss: (state) => {
+            if (state.primary_text_color) {
+                return 'color: #' + state.primary_text_color + ';'
+            }
+            return '';
         }
     },
 
@@ -27,6 +52,8 @@ export const useSettingsStore = defineStore('settings',{
             this.formatting_options = data.formatting_options;
             this.notice_boards = data.notice_boards;
             this.copy_allowed = data.copy_allowed;
+            this.primary_color = data.primary_color;
+            this.primary_text_color = data.primary_text_color;
         },
 
         async clearStorage() {
