@@ -9,6 +9,11 @@ import 'tinymce/icons/default';
 import 'tinymce/themes/silver';
 // Import the skin
 import 'tinymce/skins/ui/oxide/skin.css';
+
+/* Import content css */
+import contentUiCss from 'tinymce/skins/ui/oxide/content.css';
+import contentLocalCss from '@/styles/content.css';
+
 /* Import plugins */
 import 'tinymce/plugins/lists';
 import 'tinymce/plugins/charmap';
@@ -52,7 +57,10 @@ const id = "essay";
         menubar: false,
         plugins: 'lists charmap',
         toolbar: toolbar(),
-        custom_undo_redo_levels: 10
+        custom_undo_redo_levels: 10,
+        skin: false,                //  avoid 404 errors for skin css files
+        content_css: false,              // avoid 404 error for content css file
+        content_style: contentUiCss.toString() + '\n' + contentLocalCss.toString()
        }"
   />
 </template>
