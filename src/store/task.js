@@ -20,7 +20,8 @@ export const useTaskStore = defineStore('task',{
             title: null,            // title of the task - shown in the app bar
             writer_name: null,      // name of the writer - shown in the app bar
             instructions: null,     // instructions - shown in the left column
-            writing_end: null,      // writung end (sec in server time) - accept no writing step after this time
+            writing_end: null,      // writing end (sec in server time) - accept no writing step after this time
+            writing_excluded: null, // writing excluded (sec in server time) - accept no writing step after this time
 
             // not saved in storage
             remaining_time: null     // remaining writing time in seconds (updated per interval)
@@ -30,6 +31,7 @@ export const useTaskStore = defineStore('task',{
     getters: {
         hasWritingEnd: (state) => !!state.writing_end,
         writingEndReached: (state) => state.remaining_time === 0,
+        isExcluded: (state) => state.writing_excluded > 0
     },
 
     actions: {
@@ -38,6 +40,7 @@ export const useTaskStore = defineStore('task',{
             this.instructions = data.instructions;
             this.writer_name = data.writer_name;
             this.writing_end = data.writing_end;
+            this.writing_excluded = data.writing_excluded;
         },
 
         async clearStorage() {
@@ -86,7 +89,7 @@ export const useTaskStore = defineStore('task',{
                 this.remaining_time = null;
             }
 
-            if (this.writingEndReached) {
+            if (this.writingEndReached || this.isExcluded) {
                 apiStore.review = true;
             }
         }

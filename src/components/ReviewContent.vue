@@ -15,13 +15,17 @@ const settingsStore = useSettingsStore();
     <div class="container">
 
       <div  class="column">
-        <div class="col-header bg-grey-lighten-4" v-show="taskStore.writingEndReached">
+        <div class="col-header bg-grey-lighten-4" v-show="taskStore.isExcluded">
+          <h2 class="text-h6">Sie wurden von der Bearbeitung ausgeschlossen.</h2>
+          <p>Es ist keine weitere Eingabe möglich.</p>
+        </div>
+        <div class="col-header bg-grey-lighten-4" v-show="taskStore.writingEndReached && !taskStore.isExcluded">
           <h2 class="text-h6">Ihre Bearbeitungszeit ist beendet</h2>
           <p>Es ist keine weitere Eingabe möglich. Bitte überprüfen Sie, ob Sie den Text in dieser Form zur Bewertung abgeben möchten.</p>
         </div>
-        <div class="col-header bg-grey-lighten-4" v-show="!taskStore.writingEndReached">
+        <div class="col-header bg-grey-lighten-4" v-show="!taskStore.writingEndReached && !taskStore.isExcluded">
           <h2 class="text-h6">Abgabe-Text</h2>
-          <p>Bitte überprüfen Sie, ob Sie den Text in dieser Form zur Bwertung abgeben möchten.
+          <p>Bitte überprüfen Sie, ob Sie den Text in dieser Form zur Bewertung abgeben möchten.
             Nach der Abgabe ist keine weitere Bearbeitung mehr möglich!</p>
         </div>
 
@@ -30,15 +34,15 @@ const settingsStore = useSettingsStore();
         </div>
 
         <div class="col-footer text-right bg-grey-lighten-4" >
-          <v-btn class="ma-2" @click="apiStore.finalize(true)" :color="settingsStore.primaryColorCss" >
+          <v-btn class="ma-2" @click="apiStore.finalize(true)" :color="settingsStore.primaryColorCss" v-show="!taskStore.isExcluded">
             <v-icon :color="settingsStore.primaryTextColorCss" icon="mdi-file-send-outline"></v-icon>
             <span :style="settingsStore.primaryTextColorFullCss">Zur Bewertung abgeben</span>
           </v-btn>
-          <v-btn class="ma-2" @click="apiStore.finalize(false)" v-show="taskStore.writingEndReached">
+          <v-btn class="ma-2" @click="apiStore.finalize(false)" v-show="taskStore.writingEndReached || taskStore.isExcluded">
             <v-icon icon="mdi-logout-variant"></v-icon>
             <span>Ohne Abgabe beenden</span>
           </v-btn>
-          <v-btn class="ma-2" @click="apiStore.review=false" v-show="!taskStore.writingEndReached">
+          <v-btn class="ma-2" @click="apiStore.review=false" v-show="!taskStore.writingEndReached && !taskStore.isExcluded">
             <v-icon icon="mdi-file-edit-outline"></v-icon>
             <span>Weiter bearbeiten</span>
           </v-btn>
@@ -73,6 +77,8 @@ const settingsStore = useSettingsStore();
 
 
 <style scoped>
+
+@import '@/styles/content.css';
 
 /* Structure */
 
