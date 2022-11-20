@@ -211,13 +211,13 @@ export const useEssayStore = defineStore('essay',{
          * Save it in the browser storage
          * Call sending to the backend (don't wait)
          */
-        async updateContent(fromEditor = false) {
+        async updateContent(fromEditor = false, forced = false) {
 
             const apiStore = useApiStore();
 
             // avoid too many checks
             const currentTime = Date.now();
-            if (currentTime - this.lastCheck < checkInterval) {
+            if (!forced && currentTime - this.lastCheck < checkInterval) {
                 return;
             }
 
@@ -255,6 +255,7 @@ export const useEssayStore = defineStore('essay',{
 
                     // make a full save if ...
                     if (this.history.length == 0                            // it is the first save
+                        || forced
                         || difftext.length > currentContent.length          // or diff would be longer than full text
                         || this.sumOfDistances + distance > maxDistance     // or enough changes are saved as diffs
                         || result[0] != currentContent                      // or patch is wrong
@@ -310,7 +311,7 @@ export const useEssayStore = defineStore('essay',{
                 this.lastCheck = currentTime;
 
                 // trigger sending to the backend (don't wait)
-                this.sendUpdate();
+                this.sendUpdate(forced);
             }
             catch(error) {
                 console.error(error);
@@ -323,11 +324,11 @@ export const useEssayStore = defineStore('essay',{
          * Send an update to the backend
          * Called from updateContent() without wait
          */
-        async sendUpdate() {
+        async sendUpdate(forced = false) {
 
             // avoid too many sendings
             // sendUpdate is called from updateContent with the checkInterval
-            if (Date.now() - this.lastSending < sendInterval) {
+            if (!forced && Date.now() - this.lastSending < sendInterval) {
                 return;
             }
 
