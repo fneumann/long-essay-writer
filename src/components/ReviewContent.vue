@@ -14,7 +14,34 @@ const settingsStore = useSettingsStore();
   <v-main fill-height>
     <div class="container">
 
-      <div  class="column">
+      <div  class="column" v-show="essayStore.openSendings > 0">
+        <div class="col-header bg-grey-lighten-4">
+          <h2 class="text-h6" style="color:#f00000;">Ihre letzten Eingaben wurden noch nicht gespeichert!</h2>
+          <p>Bitte warten sie, bis eine Speicherung wieder möglich ist. Wenden Sie sich gegebenenfalls an die Aufsicht.</p>
+        </div>
+
+        <div class="col-content">
+          <div class="review-text" v-html="essayStore.storedContent"></div>
+        </div>
+
+        <div class="col-footer text-right bg-grey-lighten-4" >
+          <v-btn class="ma-2" :color="settingsStore.primaryColorCss" @click="apiStore.finalize(false)">
+            <v-icon :color="settingsStore.primaryTextColorCss" icon="mdi-refresh" ></v-icon>
+            <span :style="settingsStore.primaryTextColorFullCss">Erneut versuchen</span>
+          </v-btn>
+          <v-btn class="ma-2" @click="apiStore.review=false" v-show="!taskStore.writingEndReached && !taskStore.isExcluded">
+            <v-icon icon="mdi-file-edit-outline"></v-icon>
+            <span>Weiter bearbeiten</span>
+          </v-btn>
+          <v-btn class="ma-2" :href="apiStore.returnUrl">
+            <v-icon left icon="mdi-logout-variant"></v-icon>
+            <span>Ohne Speichern beenden</span>
+          </v-btn>
+
+        </div>
+      </div>
+
+      <div  class="column" v-show="essayStore.openSendings <= 0">
         <div class="col-header bg-grey-lighten-4" v-show="taskStore.isExcluded">
           <h2 class="text-h6">Sie wurden von der Bearbeitung ausgeschlossen.</h2>
           <p>Es ist keine weitere Eingabe möglich.</p>
@@ -55,7 +82,7 @@ const settingsStore = useSettingsStore();
         <v-card-text>
           <p v-show="apiStore.showAuthorizeFailure">Beim Speichern der Abgabe ist ein Fehler aufgetreten.
             Bitte versuchen Sie es später noch einmal.</p>
-          <p v-show="!apiStore.showFinalizeFailure">Beim Speichern Ihrer letzten Änderungen ist ein Fehler aufgetreten.
+          <p v-show="!apiStore.showAuthorizeFailure">Beim Speichern Ihrer letzten Änderungen ist ein Fehler aufgetreten.
             Bitte versuchen Sie es später noch einmal.</p>
         </v-card-text>
         <v-card-actions>

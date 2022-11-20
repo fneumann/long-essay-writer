@@ -209,6 +209,8 @@ export const useApiStore = defineStore('api', {
             await essayStore.loadFromStorage();
             await layoutStore.loadFromStorage();
 
+            // directy check for updates of task settings to avoid delay
+            await this.checkUpdate();
             this.initialized = true;
         },
 
@@ -402,6 +404,8 @@ export const useApiStore = defineStore('api', {
 
         /**
          * Finalize the writing
+         * This is called for any regular leaving of the writer (interruption or submission)
+         * The written content is sent to the server and the local storage is cleared
          */
         async finalize(authorize) {
 
@@ -410,6 +414,7 @@ export const useApiStore = defineStore('api', {
             const resourcesStore = useResourcesStore();
             const essayStore = useEssayStore();
             const layoutStore = useLayoutStore();
+            const alertStore = useAlertStore();
 
             if (authorize || essayStore.openSendings > 0) {
                 if (!await this.saveFinalContentToBackend (
@@ -418,6 +423,7 @@ export const useApiStore = defineStore('api', {
                     essayStore.storedHash,
                     authorize,
                 )) {
+                    this.review = true
                     this.showFinalizeFailure = true
                     this.showAuthorizeFailure = authorize
                     return;
@@ -429,6 +435,7 @@ export const useApiStore = defineStore('api', {
             await resourcesStore.clearStorage();
             await essayStore.clearStorage();
             await layoutStore.clearStorage();
+            await alertStore.clearStorage();
             localStorage.clear();
 
             window.location = this.returnUrl;

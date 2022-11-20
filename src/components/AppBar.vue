@@ -24,13 +24,6 @@ function getTitle() {
     <v-app-bar-title>{{getTitle()}}</v-app-bar-title>
     <v-spacer></v-spacer>
 
-<!--
-    <v-btn>
-      <v-icon left icon="mdi-bell-outline"></v-icon>
-      <span>0 Mitteilungen</span>
-    </v-btn>
--->
-
     <alerts v-if="alertStore.hasAlerts"></alerts>
     <timer v-if="taskStore.hasWritingEnd"></timer>
 
@@ -41,8 +34,8 @@ function getTitle() {
       <v-menu activator="parent" anchor="bottom end" origin="end top">
         <v-card>
           <v-list>
-            <v-list-item :href="apiStore.returnUrl">
-              <v-list-item-title>Unterbrechen</v-list-item-title>
+            <v-list-item @click="apiStore.finalize(false)">
+                <v-list-item-title>Unterbrechen</v-list-item-title>
             </v-list-item>
             <v-list-item @click="apiStore.review=true">
               <v-list-item-title>Vorschau / Abgabe ...</v-list-item-title>
