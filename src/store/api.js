@@ -439,6 +439,30 @@ export const useApiStore = defineStore('api', {
             localStorage.clear();
 
             window.location = this.returnUrl;
-        }
+        },
+
+        /**
+         * Retry the final transmission
+         * This is called from the review screen
+         * A retry should not authorize and close the writer
+         * Instead the review screen is shown again and allows to auhorize
+         */
+        async retry() {
+
+            const essayStore = useEssayStore();
+            if (await this.saveFinalContentToBackend (
+                essayStore.unsentHistory,
+                essayStore.storedContent,
+                essayStore.storedHash,
+                false,
+            )) {
+                await essayStore.setAllSavingsSent();
+            }
+            else {
+                this.showFinalizeFailure = true
+            }
+
+            this.review = true;
+        },
     }
 })

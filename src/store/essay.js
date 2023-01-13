@@ -355,6 +355,7 @@ export const useEssayStore = defineStore('essay',{
                 if (await apiStore.saveWritingStepsToBackend(steps))
                 {
                     this.lastSentIndex = sentIndex;
+                    this.lastSentHash = sentHash;
                     await storage.setItem('lastSentIndex', sentIndex);
                     await storage.setItem('lastSentHash', sentHash);
                 }
@@ -362,6 +363,18 @@ export const useEssayStore = defineStore('essay',{
             }
 
             lockSending = false;
+        },
+
+
+        /**
+         * Note that all
+         */
+        async setAllSavingsSent() {
+            this.lastSentIndex = this.lastStoredIndex;
+            this.lastSentHash = this.storedHash;
+            await storage.setItem('lastSentIndex', this.lastSentIndex);
+            await storage.setItem('lastSentHash', this.lastSentHash);
+            this.lastSending = Date.now();
         },
 
         /**

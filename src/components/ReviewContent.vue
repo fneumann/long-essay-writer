@@ -16,8 +16,8 @@ const settingsStore = useSettingsStore();
 
       <div  class="column" v-show="essayStore.openSendings > 0">
         <div class="col-header bg-grey-lighten-4">
-          <h2 class="text-h6" style="color:#f00000;">Ihre letzten Eingaben wurden noch nicht gespeichert!</h2>
-          <p>Bitte warten sie, bis eine Speicherung wieder möglich ist. Wenden Sie sich gegebenenfalls an die Aufsicht.</p>
+          <h2 class="text-h6" style="color:#f00000;">Ihre letzten Eingaben wurden noch nicht übertragen, sind aber lokal gespeichert!</h2>
+          <p>Bitte versuchen Sie die Übertragung nach einiger Zeit erneut. Wenden Sie sich gegebenenfalls an die Aufsicht.</p>
         </div>
 
         <div class="col-content">
@@ -25,7 +25,7 @@ const settingsStore = useSettingsStore();
         </div>
 
         <div class="col-footer text-right bg-grey-lighten-4" >
-          <v-btn class="ma-2" :color="settingsStore.primaryColorCss" @click="apiStore.finalize(false)">
+          <v-btn class="ma-2" :color="settingsStore.primaryColorCss" @click="apiStore.retry()">
             <v-icon :color="settingsStore.primaryTextColorCss" icon="mdi-refresh" ></v-icon>
             <span :style="settingsStore.primaryTextColorFullCss">Erneut versuchen</span>
           </v-btn>
@@ -35,7 +35,7 @@ const settingsStore = useSettingsStore();
           </v-btn>
           <v-btn class="ma-2" :href="apiStore.returnUrl">
             <v-icon left icon="mdi-logout-variant"></v-icon>
-            <span>Ohne Speichern beenden</span>
+            <span>Ohne Übertragung beenden</span>
           </v-btn>
 
         </div>
@@ -80,10 +80,15 @@ const settingsStore = useSettingsStore();
     <v-dialog persistent v-model="apiStore.showFinalizeFailure">
       <v-card>
         <v-card-text>
-          <p v-show="apiStore.showAuthorizeFailure">Beim Speichern der Abgabe ist ein Fehler aufgetreten.
+          <p v-show="apiStore.showAuthorizeFailure">Beim Übertragen Ihrer Abgabe ist ein Fehler aufgetreten.
             Bitte versuchen Sie es später noch einmal.</p>
-          <p v-show="!apiStore.showAuthorizeFailure">Beim Speichern Ihrer letzten Änderungen ist ein Fehler aufgetreten.
+          <p v-show="!apiStore.showAuthorizeFailure">Beim Übertragen Ihrer letzten Änderungen ist ein Fehler aufgetreten.
             Bitte versuchen Sie es später noch einmal.</p>
+          <p><br>
+            Sie können diese Oberfläche auch ohne Übertragung beenden und später wieder aufrufen, um das nachzuholen.
+            Ihre Eingaben bleiben lokal gespeichet, auch wenn Sie den Browser schließen, solange Sie Ihre
+            Browserdaten nicht löschen.
+          </p>
         </v-card-text>
         <v-card-actions>
           <v-btn @click="apiStore.showFinalizeFailure=false">
@@ -92,7 +97,7 @@ const settingsStore = useSettingsStore();
           </v-btn>
           <v-btn :href="apiStore.returnUrl">
             <v-icon left icon="mdi-logout-variant"></v-icon>
-            <span>Ohne Speichern beenden</span>
+            <span>Ohne Übertragung beenden</span>
           </v-btn>
         </v-card-actions>
       </v-card>
