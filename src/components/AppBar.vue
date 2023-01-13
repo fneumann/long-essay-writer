@@ -27,7 +27,12 @@ function sleep(ms) {
 async function closeWriter() {
   await essayStore.updateContent(false, true);
   await sleep(500);
-  window.location = apiStore.returnUrl;
+  if (essayStore.openSendings > 0) {
+    apiStore.review=true;
+  }
+  else {
+    window.location = apiStore.returnUrl;
+  }
 }
 
 async function openReview() {
