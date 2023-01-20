@@ -16,8 +16,8 @@ const settingsStore = useSettingsStore();
 
       <div  class="column" v-show="essayStore.openSendings > 0">
         <div class="col-header bg-grey-lighten-4">
-          <h2 class="text-h6" style="color:#f00000;">Ihre letzten Eingaben wurden noch nicht übertragen, sind aber lokal gespeichert!</h2>
-          <p>Bitte versuchen Sie die Übertragung nach einiger Zeit erneut. Wenden Sie sich gegebenenfalls an die Aufsicht.</p>
+          <h2 class="text-h6" style="color:#f00000;">Ihre letzten Eingaben wurden noch nicht übertragen, sind aber lokal gesichert!</h2>
+          <p>Bitte versuchen Sie die Übertragung nach einer Minute erneut. Wenden Sie sich gegebenenfalls an die Aufsicht.</p>
         </div>
 
         <div class="col-content">
@@ -33,11 +33,12 @@ const settingsStore = useSettingsStore();
             <v-icon icon="mdi-file-edit-outline"></v-icon>
             <span>Weiter bearbeiten</span>
           </v-btn>
+          <!--
           <v-btn class="ma-2" :href="apiStore.returnUrl">
             <v-icon left icon="mdi-logout-variant"></v-icon>
             <span>Ohne Übertragung beenden</span>
           </v-btn>
-
+          -->
         </div>
       </div>
 
@@ -67,7 +68,7 @@ const settingsStore = useSettingsStore();
           </v-btn>
           <v-btn class="ma-2" @click="apiStore.finalize(false)" v-show="taskStore.writingEndReached || taskStore.isExcluded">
             <v-icon icon="mdi-logout-variant"></v-icon>
-            <span>Ohne Abgabe beenden</span>
+            <span>Meine Bearbeitung nicht bewerten</span>
           </v-btn>
           <v-btn class="ma-2" @click="apiStore.review=false" v-show="!taskStore.writingEndReached && !taskStore.isExcluded">
             <v-icon icon="mdi-file-edit-outline"></v-icon>
@@ -80,24 +81,25 @@ const settingsStore = useSettingsStore();
     <v-dialog persistent v-model="apiStore.showFinalizeFailure">
       <v-card>
         <v-card-text>
-          <p v-show="apiStore.showAuthorizeFailure">Beim Übertragen Ihrer Abgabe ist ein Fehler aufgetreten.
-            Bitte versuchen Sie es später noch einmal.</p>
-          <p v-show="!apiStore.showAuthorizeFailure">Beim Übertragen Ihrer letzten Änderungen ist ein Fehler aufgetreten.
-            Bitte versuchen Sie es später noch einmal.</p>
+          <p>Bei der Übertragung ihres Texts ist ein Netzwerkproblem aufgetreten. Ihre Eingaben sind lokal gesichert.</p>
           <p><br>
-            Sie können diese Oberfläche auch ohne Übertragung beenden und später wieder aufrufen, um das nachzuholen.
-            Ihre Eingaben bleiben lokal gespeichet, auch wenn Sie den Browser schließen, solange Sie Ihre
-            Browserdaten nicht löschen.
+            Sie können die Klausur auch ohne Übertragung verlassen und später wieder aufrufen, um die Übertragung nachzuholen.
+          </p>
+          <p v-show="apiStore.showAuthorizeFailure"><br>
+            Melden Sie sich bei der Aufsicht, um Ihre Klausur zur Korrektur abzugeben.
+          </p>
+          <p v-show="!apiStore.showAuthorizeFailure"><br>
+            Melden Sie sich bei der Aufsicht, um Hilfe zu  erhalten.
           </p>
         </v-card-text>
         <v-card-actions>
           <v-btn @click="apiStore.showFinalizeFailure=false">
             <v-icon left icon="mdi-close"></v-icon>
-            <span>Später versuchen</span>
+            <span>Meldung schließen</span>
           </v-btn>
           <v-btn :href="apiStore.returnUrl">
             <v-icon left icon="mdi-logout-variant"></v-icon>
-            <span>Ohne Übertragung beenden</span>
+            <span>Ohne Übertragung verlassen</span>
           </v-btn>
         </v-card-actions>
       </v-card>
