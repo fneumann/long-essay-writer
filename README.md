@@ -1,4 +1,4 @@
-# long-essay-writer
+# long-essay-writer (Pre-Test Verison)
 
 Web App to write long Essays in an exam.
 Used by the [LongEssayService](https://github.com/fneumann/LongEssayService).
